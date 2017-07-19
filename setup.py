@@ -14,7 +14,6 @@ setup(
     keywords="SolveEngine MIP SAT Optimization",
     packages=['solveengine'],
     license='',
-    url='https://github.com/AlexMSatalia/SolveEngine',
-    download_url='https://github.com/AlexMSatalia/SolveEngine/archive/0.1.tar.gz',
-    long_description=open('README.txt').read(),
+    url='https://github.com/Satalia/solveengine-python-modeling-lib',
+    download_url='https://github.com/Satalia/solveengine-python-modeling-lib/archive/0.1.tar.gz',
 )
