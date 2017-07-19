@@ -1,1 +1,3 @@
-# solvengine-python-modeling-lib
+# SolveEngine
+Python library for Solve Engine
+
