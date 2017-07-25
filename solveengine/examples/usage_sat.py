@@ -25,8 +25,13 @@ debug = True
 #if True, messages will be printed to keep updated on the status of the solving
 interactive_mode = True
 
+#web connection works by default with grpc, which is faster
+#if http connections desired set it to True
+http_mode = False
+
 model = SATModel(token, filename=filename, sleeptime=sleeptime, 
-                 debug=debug, interactive_mode=interactive_mode)
+                 debug=debug, interactive_mode=interactive_mode,
+                 http_mode=http_mode)
 
 ######################################
 ######################################
@@ -80,10 +85,13 @@ model.add_list_constraints(lst_constraints=lst_constraints)
 
 ######################################
 ######################################
+# check the model
+#
+print(model.get_file_str())
+
 # solving the model
 #
 model.solve()
-
 ######################################
 # checking the result status and getting the result
 #
@@ -107,6 +115,9 @@ if model.solver_status == SEStatusCode.COMPLETED:
         #print variables values
         for key, value in model.variables:
             print(key, "=", value)
+        
+        #print summary
+        model.print_result()
 
     # status codes without solution
     elif model.solver_status in [SolverStatusCode.UNSATISFIABLE]:

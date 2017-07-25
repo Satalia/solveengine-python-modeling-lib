@@ -9,8 +9,8 @@ models via the Solve-Engine.
 from enum import Enum
 from collections import namedtuple
 
-from .helper import StrEnum, _get_logger, check_complete_list
-from .basemodel import BaseModel, SolverStatusCode
+from helper import StrEnum, _get_logger, check_complete_list
+from basemodel import BaseModel, SolverStatusCode
 
 LOGGER = _get_logger()
 
@@ -29,7 +29,9 @@ class Infinity:
 
     def __str__(self):
         return "inf"
-
+    
+    def __repr__(self):
+        return "INF"
 
 class NegInfinity:
     """class to represent -infinity
@@ -45,7 +47,9 @@ class NegInfinity:
 
     def __str__(self):
         return "-inf"
-
+    
+    def __repr__(self):
+        return "-INF"
 
 INF = Infinity()
 
@@ -93,22 +97,23 @@ class MIPModel(BaseModel):
     OBJECTIVE = namedtuple('Objective', 'expr direction value')
 
     def __init__(self, token, filename="model", sleeptime=2,
-                 debug=False, interactive_mode=False):
+                 debug=False, interactive_mode=False, http_mode=False):
         super(MIPModel, self).__init__(token=token,
                                        filename=filename,
                                        sleeptime=sleeptime,
                                        debug=debug,
                                        file_ending=".lp",
-                                       interactive_mode=interactive_mode)
+                                       interactive_mode=interactive_mode,
+                                       http_mode=http_mode)
         self._variables = dict()
         self._constraints = []
         self._obj = MIPModel.OBJECTIVE(Expr(), Direction.MINIMIZE, None)
 
-    def add_var(self, name, *args, **kwargs):
+    def add_var(self, name, lb=-INF, ub=INF, vartype=VarType.CONTINIOUS):
         """add Variable to model"""
         if name in self._variables:
             raise ValueError("Variable {} does exists".format(name))
-        var = Var(name, *args, **kwargs)
+        var = Var(name, lb, ub, vartype)
         self._variables[name] = var
         return var
 
@@ -357,17 +362,23 @@ class MIPModel(BaseModel):
         """get the status"""
         return self._solver_status
 
-    def _process_solution(self, solution):
+    def _process_solution(self, result_obj):
         """process the results of the solver"""
-        self._obj = self._obj._replace(value=solution.objective_value)
-        self._solver_status = solution.solve_status
+        self._obj = self._obj._replace(value=result_obj.objective_value)
+        self._solver_status= result_obj.status
         if self._solver_status not in SolverStatusCode.get_values():
             raise ValueError("solver status unknown:", self._solver_status)
-        for var_name, var_value in solution.dic_variables.items():
-            var = self._variables[var_name]
-            var.set_value(var_value)
 
-    def _get_file_str(self):
+        for var in result_obj.variables:
+            self._variables[var.name].set_value(var.value)
+
+    def print_results(self):
+        lst_lines = ["".join(["Status : ", self.solver_status])]
+        lst_lines.append("".join(["Objective value : ", str(self.obj)]))
+        lst_lines.extend(list(map(str, self._variables.values())))
+        print("\n".join(lst_lines))
+
+    def get_file_str(self):
         listLines = []
         listLines.append(str(self._obj.direction.value))
         listLines.append(str(self._obj.expr.lpstr()))
@@ -631,4 +642,7 @@ class Var(Expr):
     def __imul__(self, other):
         expr = self.get_copy()
         expr *= other
-        return expr   
+        return expr
+    
+    def __str__(self):
+        return "".join([self._name, " : ", str(self._value)])

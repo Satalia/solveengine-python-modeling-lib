@@ -53,6 +53,11 @@ class ResponseJob():
         self.fileName = json_obj['filenames']
         self.usedTime = json_obj['used_time']
 
+class Variable():
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
 class ObjResponse():    
     def __init__(self, json_obj, resp_type):
         try:
@@ -75,16 +80,16 @@ class ObjResponse():
                 self.job_status = json_obj['status']
 
             elif resp_type == SERequests.GET_RESULT:
-                self.dic_variables = {}
+                self.variables = []
                 self.job_id = json_obj['job_id'] 
                 dct_result = json_obj['result']
 
-                self.solve_status = dct_result['status']
+                self.status = dct_result['status']
                 self.objective_value = dct_result.get('objective_value', 'no objective value')
                 lst_dct_vars = dct_result.get('variables', [])
 
                 for dct_var in lst_dct_vars:
-                    self.dic_variables[dct_var['name']] = dct_var['value']
+                    self.variables.append(Variable(dct_var['name'], dct_var['value']))
                     
             self.unusual_answer = False
             
@@ -93,14 +98,32 @@ class ObjResponse():
             self.code = json_obj['code']
             self.message = json_obj['message']
 
-    def build_results(self):
-        return {"status" : self.solveStatus,
-                "obj_value" : self.objectiveValue,
-                "variables" : self.dicVariables}
-
     def build_err_msg(self):
         return "Error type : " + str(self.code) + "\nMessage returned by the server : " + self.message
 
+def unusual_answer(resp_obj, resp_type):
+    try:
+        if resp_type == SERequests.GET_JOBS:
+            temp = resp_obj.jobs                
+            temp = resp_obj.total
+
+        elif resp_type == SERequests.CREATE_JOB:
+            temp = resp_obj.id
+
+        elif resp_type == SERequests.GET_STATUS:
+            temp = resp_obj.status
+
+        elif resp_type == SERequests.GET_RESULT:
+            temp = resp_obj.job_id
+            temp = resp_obj.result.status
+
+        return False     
+    except:
+        return True
+
+def build_err_msg(resp_obj):
+        return "Error type : " + str(resp_obj.code) + "\nMessage returned by the server : " + resp_obj.message
+    
 def check_complete_list(list_, nbMax, defValue):
     """make sure the list is long enough
     

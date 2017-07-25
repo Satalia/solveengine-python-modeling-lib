@@ -25,8 +25,13 @@ debug = True
 #if True, messages will be printed to keep updated on the status of the solving
 interactive_mode = True
 
+#web connection works by default with grpc, which is faster
+#if http connections desired set it to True
+http_mode = False
+
 model = MIPModel(token, filename=filename, sleeptime=sleeptime,
-                 debug=debug, interactive_mode=interactive_mode)
+                 debug=debug, interactive_mode=interactive_mode,
+                 http_mode=http_mode)
 
 # two ways to set the objective direction of the model
 model.set_to_minimize()
@@ -157,10 +162,13 @@ model.build_with_matrices(f, A, b,
                           int_list=int_list, bin_list=bin_list) #optional
 
 ######################################
+# check the model
+#
+print(model.get_file_str())
+
 # solving the model
 #
 model.solve()
-
 ######################################
 # checking the result status and getting the result
 #
@@ -192,6 +200,9 @@ if model.se_status == SEStatusCode.COMPLETED:
         #print variables values
         for key, value in model.variables:
             print(key, "=", value)
+            
+        #print summary
+        model.print_result()
 
     # status codes without solution
     if model.solver_status in [SolverStatusCode.INFEASIBLE,
