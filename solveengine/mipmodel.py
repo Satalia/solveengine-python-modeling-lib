@@ -9,8 +9,8 @@ models via the Solve-Engine.
 from enum import Enum
 from collections import namedtuple
 
-from helper import StrEnum, _get_logger, check_complete_list
-from basemodel import BaseModel, SolverStatusCode
+from .helper import StrEnum, _get_logger, check_complete_list
+from .basemodel import BaseModel, SolverStatusCode
 
 LOGGER = _get_logger()
 

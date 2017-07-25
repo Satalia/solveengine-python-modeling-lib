@@ -9,7 +9,7 @@ models via the Solve-Engine.
 import itertools
 from functools import reduce
 
-from basemodel import BaseModel, SolverStatusCode
+from .basemodel import BaseModel, SolverStatusCode
 
 
 class SATModel(BaseModel):

@@ -10,10 +10,10 @@ import base64 as b64
 import sys
 import grpc
 
-from svc_jobs_pb2_grpc import JobStub
-from svc_jobs_pb2 import Problem, JobRequest, CreateJobRequest
+from .svc_jobs_pb2_grpc import JobStub
+from .svc_jobs_pb2 import Problem, JobRequest, CreateJobRequest
 
-from helper import _get_logger, StrEnum, unusual_answer, SERequests, build_err_msg, ObjResponse
+from .helper import _get_logger, StrEnum, unusual_answer, SERequests, build_err_msg, ObjResponse
 
 LOGGER = _get_logger()
 
