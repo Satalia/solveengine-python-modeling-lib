@@ -9,6 +9,7 @@ import requests
 import base64 as b64
 import sys
 import grpc
+import config
 
 from .svc_jobs_pb2_grpc import JobStub
 from .svc_jobs_pb2 import Problem, JobRequest, CreateJobRequest
@@ -67,7 +68,7 @@ class BaseModel(object):
     """
     JOB_ID = "job_id"
     OPTIONS = namedtuple("Options", 'sleeptime debug')
-    BASEURL = "https://solve.satalia.com/api/v2/jobs/"
+    BASEURL = config.SE_URL_HTTP
 
     def __init__(self, token, filename="model", sleeptime=2, debug=False, 
                  file_ending=".lp", interactive_mode=False, http_mode=False):
@@ -121,7 +122,7 @@ class BaseModel(object):
 
     def _prepare_grpc(self):
         creds = grpc.ssl_channel_credentials()
-        channel = grpc.secure_channel("solve.satalia.com:443", creds)
+        channel = grpc.secure_channel(config.SE_URL_GRPC, creds)
         self._solve_engine = JobStub(channel)
 
     def _create_job(self):
