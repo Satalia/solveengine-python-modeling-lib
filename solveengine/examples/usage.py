@@ -165,6 +165,9 @@ model.build_with_matrices(f, A, b,
 # check the model
 #
 print(model.get_file_str())
+print(model.constraints)
+print(model.filename)
+model.update_filename("new_name")
 
 # solving the model
 #

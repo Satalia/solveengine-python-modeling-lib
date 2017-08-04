@@ -38,13 +38,6 @@ class SATModel(BaseModel):
                                        http_mode=http_mode)
         self._variables = dict()
         self._constraints = []
-        
-    def get_file_str(self):
-        clauses = (constr.convert_to_cnf().content for constr in self._constraints)
-        clauses = [clause for x in clauses for clause in x]
-        filestr = "p cnf {} {}\n".format(len(self._variables), len(clauses))
-        filestr += "\n".join(clause.get_cnf_str() for clause in clauses)
-        return filestr
 
     def _process_solution(self, result_obj):
         """process the results of the solver"""
@@ -123,6 +116,7 @@ class SATModel(BaseModel):
 
     @property
     def constraints(self):
+        """returns the field: constraints of the model"""
         return self._constraints
 
     @property
@@ -134,13 +128,22 @@ class SATModel(BaseModel):
 
     @property
     def solver_status(self):
+        """returns the status returned by the solver"""
         return self._solver_status
 
     def print_results(self):
+        """prints a sum up of the results returned from solve engine"""
         lst_lines = ["".join(["Status : ", self.solver_status])]
         lst_lines.extend([var.result 
                           for var in self._variables.values()])
         print("\n".join(lst_lines))
+
+    def get_file_str(self):
+        clauses = (constr.convert_to_cnf().content for constr in self._constraints)
+        clauses = [clause for x in clauses for clause in x]
+        filestr = "p cnf {} {}\n".format(len(self._variables), len(clauses))
+        filestr += "\n".join(clause.get_cnf_str() for clause in clauses)
+        return filestr
 
 class Expr(object):
     """Expr class"""

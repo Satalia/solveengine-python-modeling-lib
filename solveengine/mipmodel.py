@@ -373,12 +373,14 @@ class MIPModel(BaseModel):
             self._variables[var.name].set_value(var.value)
 
     def print_results(self):
+        """prints a sum up of the results returned from solve engine"""
         lst_lines = ["".join(["Status : ", self.solver_status])]
         lst_lines.append("".join(["Objective value : ", str(self.obj)]))
         lst_lines.extend(list(map(str, self._variables.values())))
         print("\n".join(lst_lines))
 
     def get_file_str(self):
+        """returns the str file of the problem, written in the mlip format"""
         listLines = []
         listLines.append(str(self._obj.direction.value))
         listLines.append(str(self._obj.expr.lpstr()))

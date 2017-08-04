@@ -6,10 +6,18 @@ import logging
 
 LOGGER_NAME = "satalia_solve_engine_logger"
 
+class SERequests(Enum):
+    """enum to determinate the kind of request that has been sent,
+    used to analyse the result from a request
+    """
+    GET_JOBS = 1
+    CREATE_JOB = 2
+    SCHEDULE_JOB = 3
+    GET_STATUS = 4
+    GET_RESULT = 5
 
 def _get_logger():
     return logging.getLogger(LOGGER_NAME)
-
 
 class StrEnum(Enum):
     """An enum which allows for comparison with a string"""
@@ -30,18 +38,10 @@ class StrEnum(Enum):
                 values.append(str(getattr(cls, var_name)))
         return values
 
-class ProblemType():
-    SAT = 1
-    LP = 2
-
-class SERequests():
-    GET_JOBS = 1
-    CREATE_JOB = 2
-    SCHEDULE_JOB = 3
-    GET_STATUS = 4
-    GET_RESULT = 5
-
-class ResponseJob():    
+class ResponseJob():
+    """class representing the data returned from a request
+    concerning a job
+    """
     def __init__(self, json_obj):
         self.status = json_obj['status']
         self.userId = json_obj['user_id']
@@ -54,11 +54,17 @@ class ResponseJob():
         self.usedTime = json_obj['used_time']
 
 class Variable():
+    """ class representing a variable 
+    in the sens of what is returned from a request
+    """
     def __init__(self, name, value):
         self.name = name
         self.value = value
 
-class ObjResponse():    
+class ObjResponse():
+    """class created to test and gether the data returned by the http request
+    depending on the type of request sent
+    """
     def __init__(self, json_obj, resp_type):
         try:
             if resp_type == SERequests.GET_JOBS:
@@ -102,6 +108,10 @@ class ObjResponse():
         return "Error type : " + str(self.code) + "\nMessage returned by the server : " + self.message
 
 def unusual_answer(resp_obj, resp_type):
+    """tests the values the object from grpc requests should return
+    
+    returns True if one field is missing
+    """
     try:
         if resp_type == SERequests.GET_JOBS:
             temp = resp_obj.jobs                
@@ -122,7 +132,10 @@ def unusual_answer(resp_obj, resp_type):
         return True
 
 def build_err_msg(resp_obj):
-        return "Error type : " + str(resp_obj.code) + "\nMessage returned by the server : " + resp_obj.message
+    """returns an error message with what is written in 
+    the error message returned by solve engine
+    """
+    return "Error type : " + str(resp_obj.code) + "\nMessage returned by the server : " + resp_obj.message
     
 def check_complete_list(list_, nbMax, defValue):
     """make sure the list is long enough

@@ -88,6 +88,9 @@ model.add_list_constraints(lst_constraints=lst_constraints)
 # check the model
 #
 print(model.get_file_str())
+print(model.constraints)
+print(model.filename)
+model.update_filename("new_name")
 
 # solving the model
 #
