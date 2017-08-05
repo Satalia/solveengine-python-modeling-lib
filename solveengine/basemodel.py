@@ -4,42 +4,13 @@
 
 from collections import namedtuple
 import logging
-import time
-import requests
-import base64 as b64
-import sys
+from sys import stdout
 
-from .helper import _get_logger, StrEnum, ObjResponse, SERequests
+from .connection import GrpcConnection, HttpConnection
+from .helper import _get_logger
+from .config import SolverStatusCode, SEStatusCode
 
 LOGGER = _get_logger()
-
-
-class SolverStatusCode(StrEnum):
-    """Enum for the status codes returned by the solvers"""
-    INTERUPTED = "interupted"
-    NOTSTARTED = "notstarted"
-    OPTIMAL = "optimal"
-    INFEASIBLE = "infeasible"
-    UNBOUNDED = "unbounded"
-    SATISFIABLE = "satisfiable"
-    UNSATISFIABLE = "unsatisfiable"
-
-class SEStatusCode(StrEnum):
-    """Enums for the status codes returned by SE"""
-    NOTSTARTED = "notstarted"
-    QUEUED = "queued"
-    STARTED = "started"
-    STARTING = 'starting'
-    COMPLETED = 'completed'
-    STOPPED = 'stopped'
-    FAILED = 'failed'
-    INTERRUPTED = 'interrupted'
-    TIMEOUT = 'timeout'
-
-class SEUrls(StrEnum):
-    RESULTS_URL= "results"
-    STATUS_URL = "status"
-    SCHEDULE_URL = "schedule"
 
 class BaseModel(object):
     """BaseModel class
@@ -60,23 +31,30 @@ class BaseModel(object):
 
     debug(boolean): active the debug output
     """
-    JOB_ID = "job_id"
     OPTIONS = namedtuple("Options", 'sleeptime debug')
-    BASEURL = "https://solve.satalia.com/api/v2/jobs/"
 
     def __init__(self, token, filename="model", sleeptime=2, debug=False, 
-                 file_ending=".lp", interactive_mode=False):
+                 file_ending=".lp", interactive_mode=False, http_mode=False):
         if debug:
             LOGGER.setLevel(logging.DEBUG)
         if file_ending not in [".lp", ".cnf"]:
-            raise ValueError("Filetype {} not suporrted".format(file_ending))
+            raise ValueError("Filetype {} not supported".format(file_ending))
+        self._file_ending = file_ending
         self._filename = filename + file_ending
         self._token = token
         self._id = None
         self._options = BaseModel.OPTIONS(sleeptime, debug)
-        self._solver_status = SolverStatusCode.NOTSTARTED
-        self._se_status = SEStatusCode.NOTSTARTED
-        self.interactive = interactive_mode 
+        self._solver_status = str(SolverStatusCode.NOTSTARTED)
+        self._se_status = str(SEStatusCode.NOTSTARTED)
+        
+        self.interactive = interactive_mode
+        self.use_http = http_mode
+        
+        if self.use_http:
+            self.connection = HttpConnection()
+        else:
+            self.connection = GrpcConnection(self._token)
+            
         LOGGER.debug("creating model with filename= " + self._filename)
 
     def _get_file_str(self):
@@ -98,103 +76,45 @@ class BaseModel(object):
         Error: if there is a connection problem
         """
 
-        self._create_job()
-        self._schedule_job()
-        self._wait_results()
-        self._get_solution()
-        
-        #todo remove if less interaction with user
+        self._id, self._se_status, result = self.connection.manage_solving(self)
+        self._process_solution(result)
+        LOGGER.debug("Results obtained : {}".format(self._solver_status))    
+
         self.print_if_interactive("Solving done : {}".format(self._solver_status))
 
-    def _create_job(self):
-        LOGGER.debug("Creating Solve Engine job...")
-        pb_data = self._get_file_str().encode('ascii')
-        pb_data = b64.b64encode(pb_data).decode('utf-8')
-        
-        dict_data = dict(problems=[dict(name=self._filename, data=pb_data)])
-        resp = self._send("post", with_job_id=False, json=dict_data)
-        
-        solution = ObjResponse(resp, SERequests.CREATE_JOB)
-        if solution.unusual_answer:
-            raise ValueError(solution.build_err_msg)
-        self._id = solution.job_id
-        
-        LOGGER.debug("Job created {}".format(self._id))
-
-    def _schedule_job(self):
-        LOGGER.debug("Scheduling Solve Engine job...")
-        
-        resp = self._send("post", SEUrls.SCHEDULE_URL)
-        
-        solution = ObjResponse(resp, SERequests.SCHEDULE_JOB)
-        if solution.unusual_answer:
-            raise ValueError(solution.build_err_msg)
-        
-        LOGGER.debug("Job scheduled")
-
-    def _wait_results(self):
-        sec_cnt = 0
-        while True:
-            resp = self._send("get", SEUrls.STATUS_URL)
-
-            solution = ObjResponse(resp, SERequests.GET_STATUS)
-            if solution.unusual_answer:
-                raise ValueError(solution.build_err_msg)
-            self._se_status = solution.job_status
-            
-            msg = "".join(["Solving the problem, status : ", self._se_status,
-                           " - waiting time : ", str(sec_cnt),"s"])
-            LOGGER.debug(msg)
-            self.print_if_interactive("".join(["\r" * (len(msg) * 2), msg, " " * 20]))
-            
-            if self._se_status == SEStatusCode.COMPLETED:
-                break
-            elif self._se_status == SEStatusCode.FAILED:
-                raise ValueError("Error with Solve engine : problem solving failed")
-            elif self._se_status == SEStatusCode.TIMEOUT:
-                raise ValueError("Error with Solve engine : the time limit (10min by default) has been reached before solving the problem")
-            elif self._se_status == SEStatusCode.STOPPED:
-                raise ValueError("Error with Solve engine : the job has been manually cancelled")
-            
-            #todo think about adding a superficial timeout option for models
-            time.sleep(1)
-            sec_cnt += 1
-
-    def _get_solution(self):
-        LOGGER.debug("Getting results...")
-        
-        resp = self._send("get", SEUrls.RESULTS_URL)
-        solution = ObjResponse(resp, SERequests.GET_RESULT)
-        if solution.unusual_answer:
-            raise ValueError(solution.build_err_msg)
-        if solution.job_id != self._id:
-            raise ValueError("Wrong Job_ID, Server Error")
-        
-        self._solver_status = solution.solve_status
-        self._process_solution(solution)
-
-        LOGGER.debug("Results obtained : {}".format(self._solver_status))    
-    
     @property
     def solver_status(self):
         """get the status the solver reported of the result"""
         return self._solver_status
     
     @property
+    def job_id(self):
+        """ get the ID of the job sent to Solve Engine"""
+        return self._id
+    
+    @property
     def se_status(self):
         """get the job status the solver reported while solving"""
         return self._se_status
+    
+    @property
+    def filename(self):
+        """get the name chosen for the file"""
+        return self._filename
+    
+    def update_filename(self, name):
+        """update the name of the file that will be sent to solveengine
+        after adding the file ending in case
+        """
+        if not name.endswith(self._file_ending):
+            name = "".join([name, self._file_ending])
+        self._filename = name
+    
+    def print_problem(self):
+        """ print the entire problem in the asked format"""
+        print(self.get_file_str())
 
     def print_if_interactive(self, msg):
+        """print a line replacing the current one only if mode interactive asked"""
         if self.interactive:
-            sys.stdout.write("".join(["\r" * 500, msg, " " * 100]))
-
-    def _send(self, msgtype="post", path=None, with_job_id=True, **kwargs):
-        url = "".join([BaseModel.BASEURL,
-                       "{}/".format(self._id) if with_job_id else "",
-                       str(path) if path else ""])
-        headers = {"Authorization": "api-key {}".format(self._token)}
-        result = getattr(requests, msgtype)(url, headers=headers, **kwargs)
-        LOGGER.debug("request result: " + result.text)
-        result.raise_for_status()
-        return result.json()
+            stdout.write("".join(["\r", msg, " " * 20]))

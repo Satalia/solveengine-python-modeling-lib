@@ -31,31 +31,22 @@ class SATModel(BaseModel):
     """
 
     def __init__(self, token, filename="model", sleeptime=2,
-                 debug=False, interactive_mode=False):
+                 debug=False, interactive_mode=False, http_mode=False):
         super(SATModel, self).__init__(token, filename,
                                        sleeptime, debug, ".cnf",
-                                       interactive_mode)
+                                       interactive_mode=interactive_mode,
+                                       http_mode=http_mode)
         self._variables = dict()
         self._constraints = []
-    
-    def get_file_str(self):
-        return self._get_file_str()
-    
-    def _get_file_str(self):
-        clauses = (constr.convert_to_cnf().content for constr in self._constraints)
-        clauses = [clause for x in clauses for clause in x]
-        filestr = "p cnf {} {}\n".format(len(self._variables), len(clauses))
-        filestr += "\n".join(clause.get_cnf_str() for clause in clauses)
-        return filestr
 
-    def _process_solution(self, solution):
+    def _process_solution(self, result_obj):
         """process the results of the solver"""
-        self._solver_status = solution.solve_status
+        self._solver_status = result_obj.status
         if self._solver_status not in SolverStatusCode.get_values():
             raise ValueError("solver status unknown:", self._solver_status)
-        for var_name, var_value in solution.dic_variables.items():
-            var = self._variables[int(var_name)]
-            var.set_value(True if var_value == 1 else False)
+        
+        for var in result_obj.variables:
+                self._variables[int(var.name)].set_value(True if var.value == 1 else False)
 
     def add_variable(self, name, id_=0):
         """add SAT variable to model
@@ -125,6 +116,7 @@ class SATModel(BaseModel):
 
     @property
     def constraints(self):
+        """returns the field: constraints of the model"""
         return self._constraints
 
     @property
@@ -136,7 +128,22 @@ class SATModel(BaseModel):
 
     @property
     def solver_status(self):
+        """returns the status returned by the solver"""
         return self._solver_status
+
+    def print_results(self):
+        """prints a sum up of the results returned from solve engine"""
+        lst_lines = ["".join(["Status : ", self.solver_status])]
+        lst_lines.extend([var.result 
+                          for var in self._variables.values()])
+        print("\n".join(lst_lines))
+
+    def get_file_str(self):
+        clauses = (constr.convert_to_cnf().content for constr in self._constraints)
+        clauses = [clause for x in clauses for clause in x]
+        filestr = "p cnf {} {}\n".format(len(self._variables), len(clauses))
+        filestr += "\n".join(clause.get_cnf_str() for clause in clauses)
+        return filestr
 
 class Expr(object):
     """Expr class"""
@@ -358,6 +365,13 @@ class Var(Expr):
         if self._value is None:
             raise ValueError("no value assigned yet")
         return self._value
+
+    @property
+    def result(self):
+        if self._value is None:
+            return "".join([self.name, " : ", "not computed"])
+        else:
+            return "".join([self.name, " : ", str(self.value)])
 
     def set_value(self, value):
         """set the solution value of the variable"""
