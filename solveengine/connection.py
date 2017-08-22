@@ -21,7 +21,7 @@ class BaseConnection():
     def manage_solving(self, model):
         self.model = model
         
-        self._create_job()
+        self._create_job()#model.run_time_limit)
         self._schedule_job()
         se_status = self._wait_results()
         result = self._get_solution()
@@ -40,12 +40,12 @@ class GrpcConnection(BaseConnection):
         channel = grpc.secure_channel(SE_URL_GRPC, creds)
         self._solve_engine = JobStub(channel)
 
-    def _create_job(self):
+    def _create_job(self, timeout=600):
         """create a job by sending the problem to Solveengine
         return the id of the 'job' created in the solve engine network
         """
         LOGGER.debug("Creating Solve Engine job...")
-        pb_data = self.model.get_file_str().encode('ascii')
+        pb_data = self.model.build_str_model().encode('ascii')
             
         pb = Problem(name=self.model.filename, data=pb_data)
 
@@ -82,7 +82,7 @@ class GrpcConnection(BaseConnection):
             msg = "".join(["Solving the problem, status : ", se_status,
                            " - waiting time : ", str(sec_cnt),"s"])
             LOGGER.debug(msg)
-            self.model.print_if_interactive("".join(["\r" * (len(msg) * 2), msg, " " * 20]))
+            self.model.print_if_interactive(msg)
             
             if se_status == SEStatusCode.COMPLETED:
                 break
@@ -120,12 +120,12 @@ class HttpConnection(BaseConnection):
         self.model = model
         self._headers = {"Authorization": "api-key {}".format(self._token)}
     
-    def _create_job(self):
+    def _create_job(self, timeout=600):
         """create a job by sending the problem to Solveengine
         return the id of the 'job' created in the solve engine network
         """
         LOGGER.debug("Creating Solve Engine job...")
-        pb_data = self.model.get_file_str().encode('ascii')
+        pb_data = self.model.build_str_model().encode('ascii')
 
         pb_data = b64.b64encode(pb_data).decode('utf-8')
 
@@ -165,7 +165,7 @@ class HttpConnection(BaseConnection):
             msg = "".join(["Solving the problem, status : ", se_status,
                            " - waiting time : ", str(sec_cnt),"s"])
             LOGGER.debug(msg)
-            self.model.print_if_interactive("".join(["\r" * (len(msg) * 2), msg, " " * 20]))
+            self.model.print_if_interactive(msg)
             
             if se_status == SEStatusCode.COMPLETED:
                 break

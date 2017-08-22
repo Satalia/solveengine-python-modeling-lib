@@ -8,7 +8,7 @@ from solveengine import MIPModel, VarType, INF, Direction, SEStatusCode, SolverS
 #
 # the token
 token = "2prMEegqCAFB5eqmfuXmGufyJ+PcMzJbZaQcvqrhtx4="
-staticmethod
+
 # the name of the file being used when uploading the problem file
 # (to be able to find the file in the webinterface of the SolveEngine easier)
 # default: model

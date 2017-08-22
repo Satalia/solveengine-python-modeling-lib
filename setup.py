@@ -7,7 +7,7 @@ from distutils.core import setup
 
 setup(
     name='SolveEngine',
-    version='0.2',
+    version='0.3',
     author="Karsten Lehmann",
     author_email="karsten@satalia.com",
     description="A library to model MILP/SAT problems and have them solved via the SolveEngine using the web API",
@@ -15,5 +15,5 @@ setup(
     packages=['solveengine'],
     license='',
     url='https://github.com/Satalia/solveengine-python-modeling-lib',
-    download_url='https://github.com/Satalia/solveengine-python-modeling-lib/archive/0.2.tar.gz',
+    download_url='https://github.com/Satalia/solveengine-python-modeling-lib/archive/0.3.tar.gz',
 )
