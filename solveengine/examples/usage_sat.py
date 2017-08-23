@@ -47,6 +47,11 @@ x2 = model.add_variable("x2")
 #you can define an id yourself, but it is not advised
 x3 = model.add_variable("x3", id_=3)
 
+# if a variable is lost, you can use get_variable
+x3 = model.get_variable_with_id(id_=3)
+# or
+x3 = model.get_variable_with_name(name="x3")
+
 # Building expressions
 #
 # !x1 means negative(x1)
@@ -85,12 +90,31 @@ model.add_list_constraints(lst_constraints=lst_constraints)
 
 ######################################
 ######################################
+#BUILDING WITH A FILE
+######################################
+# You can also easily build the model 
+# using a file
+# The file must contained a problem written
+# in a cnf format, starting with p cnf
+
+file_path = '/.../filename.cnf'
+# if update_name=True, the name of the
+# model will take the one from the file
+model.build_from_file(file_path=file_path, update_name=True)
+
+######################################
+######################################
 # check the model
 #
-print(model.get_file_str())
-print(model.constraints)
+print(model.build_str_model())
+print(model.print_constraints())
 print(model.filename)
 model.update_filename("new_name")
+
+# You can know the index for each constraint by printing them
+model.print_constraints()
+# You can remove constraint knowing its index
+model.remove_constraint_with_index(index=-1)
 
 # solving the model
 #
@@ -103,7 +127,7 @@ model.solve()
 print("status=", model.se_status)
 
 # if solve was successful
-if model.solver_status == SEStatusCode.COMPLETED:
+if model.se_status == SEStatusCode.COMPLETED:
 
     # print solver status
     print("solver status:", model.solver_status)
@@ -113,14 +137,18 @@ if model.solver_status == SEStatusCode.COMPLETED:
 
         # print variable values : 1 if True, -1 if False
         print("x1=", x1.value)
-        print("x2=", x2.value)
-        
-        #print variables values
-        for key, value in model.variables:
+        #or
+        print("x1=", model.var_results[1])
+        #or
+        print("x1=", model.var_name_results["x1"])        
+
+        #or
+        for key, value in model.var_name_results.items():
             print(key, "=", value)
-        
+
+        #or
         #print summary
-        model.print_result()
+        model.print_results()
 
     # status codes without solution
     elif model.solver_status in [SolverStatusCode.UNSATISFIABLE]:

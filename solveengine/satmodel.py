@@ -33,7 +33,7 @@ class SATModel(BaseModel):
     debug(boolean): active the debug output
     """
 
-    def __init__(self, token, filename="model", sleeptime=2,
+    def __init__(self, token, filename="model", sleep_time=2,
                  debug=False,
                  interactive_mode=False, http_mode=False):
         """initialise the model
@@ -54,7 +54,7 @@ class SATModel(BaseModel):
 
         super(SATModel, self).__init__(token=token,
                                        filename=filename,
-                                       sleeptime=sleeptime,
+                                       sleep_time=sleep_time,
                                        debug=debug,
                                        file_ending=".cnf",
                                        interactive_mode=interactive_mode,
@@ -184,7 +184,6 @@ class SATModel(BaseModel):
         check_instance(fct_name="remove_constraint_with_index",
                        value=index, name='index', type_=int)
         try:
-            self.__constraints[index] = None
             self.__constraints.pop(index)
         except:
             raise ValueError("".join(["The index specified, ", str(index),
@@ -230,7 +229,6 @@ class SATModel(BaseModel):
     @property
     def var_results(self):
         """return a dictionary of the variables {'var_id':value}"""
-
         def make_tuple(var): return tuple([var.id_, var.value])
 
         iter_tuples = map(make_tuple, self.__variables.values())
@@ -486,7 +484,7 @@ class Var(Expr):
     def value(self):
         """get the solution value of the variable"""
         if self.__value is None:
-            raise ValueError("no value assigned yet")
+            return "not computed"
         return self.__value
 
     @property

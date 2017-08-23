@@ -146,21 +146,6 @@ def build_err_msg(resp_obj):
     return "Error type : " + str(resp_obj.code) + "\nMessage returned by the server : " + resp_obj.message
 
 
-def check_complete_list(list_, nb_max, def_value):
-    """make sure the list is long enough
-    
-    complete with default value if not
-    
-    return False if the list is too long
-    """
-    
-    if len(list_) <= nb_max:
-        list_.extend([def_value] * (nb_max - len(list_)))
-        return True
-    else:
-        return False
-
-
 def check_instance(fct_name, value, name, type_):
     """check the type of the value,
     return an error with a build message if not the type asked"""
