@@ -284,11 +284,11 @@ class MIPModel(BaseModel):
         bin_list = list() if bin_list is None else bin_list
 
         _check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list)
-        self.__build_variables_matrices(len(f), lb, ub, int_list, bin_list)
-        self.__build_objective_matrices(f)
-        self.__build_constraints_matrices(A, b, Aeq, beq)
+        self._build_variables_matrices(len(f), lb, ub, int_list, bin_list)
+        self._build_objective_matrices(f)
+        self._build_constraints_matrices(A, b, Aeq, beq)
 
-    def __build_variables_matrices(self, nb_vars, lb, ub, int_list, bin_list):
+    def _build_variables_matrices(self, nb_vars, lb, ub, int_list, bin_list):
         """reinitiate variables
         build variables like x0, .., xnbVars using matlab-style vectors
         add them to the model's dictionary
@@ -303,20 +303,20 @@ class MIPModel(BaseModel):
             else:
                 self.add_continuous_var(var_name, lb=lb[index], ub=ub[index])
 
-    def __build_objective_matrices(self, f):
+    def _build_objective_matrices(self, f):
         """set the objective function using the list f"""
         expr = _build_expr_coeff_vars(f, self.__lst_variables)
         self.set_obj(expr)
         self.set_to_minimize()
 
-    def __build_constraints_matrices(self, A, b, Aeq, beq):
+    def _build_constraints_matrices(self, A, b, Aeq, beq):
         """build the model's constraints using matlab-style matrices"""
         self.__constraints = []
-        self.__add_constraints_matrices(A, b, boo_equ=False)
+        self._add_constraints_matrices(A, b, boo_equ=False)
         if Aeq is not None:
-            self.__add_constraints_matrices(Aeq, beq, boo_equ=True)
+            self._add_constraints_matrices(Aeq, beq, boo_equ=True)
 
-    def __add_constraints_matrices(self, A, b, boo_equ):
+    def _add_constraints_matrices(self, A, b, boo_equ):
         """add all the constraints deduced from the matrices A and b"""
         lst_tuples = _build_name_index_tuples(self.DEFAULT_EQ_NAME if boo_equ
                                               else self.DEFAULT_INEQ_NAME, len(b))
@@ -665,7 +665,7 @@ class Var(Expr):
         return expr
     
     def __str__(self):
-        return "".join([self.__name, " : ", str(self._value)])
+        return "".join([self.__name, " : ", str(self.__value)])
 
 
 def _build_name_index_tuples(name, index_max):
@@ -687,9 +687,9 @@ def _check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list):
     Complete the vectors lb, ub, int_list, bin_list
     with values by default if they are shorter than the number of variables
     """
-    _check_arrow_attr(l=f, l_name='f')
+    _check_vector_attr(l=f, l_name='f')
     _check_matrix_attr(m=A, m_name='A')
-    _check_arrow_attr(l=b, l_name='b')
+    _check_vector_attr(l=b, l_name='b')
 
     nb_vars = len(f)
 
@@ -699,17 +699,17 @@ def _check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list):
         raise ValueError("Input error : A and b are differently sized")
     if Aeq is not None:
         _check_matrix_attr(m=Aeq, m_name='Aeq')
-        _check_arrow_attr(l=beq, l_name='beq')
+        _check_vector_attr(l=beq, l_name='beq')
 
         if len(Aeq) not in [len(beq), 1]:
             raise ValueError("Input error : Aeq and beq are differently sized")
         if len(Aeq[0]) not in [nb_vars, 0]:
             raise ValueError("Input error : Aeq and f are differently sized")
 
-    _check_arrow_attr(l=lb, l_name='lb')
-    _check_arrow_attr(l=ub, l_name='ub')
-    _check_arrow_attr(l=int_list, l_name='int_list')
-    _check_arrow_attr(l=bin_list, l_name='bin_list')
+    _check_vector_attr(l=lb, l_name='lb')
+    _check_vector_attr(l=ub, l_name='ub')
+    _check_vector_attr(l=int_list, l_name='int_list')
+    _check_vector_attr(l=bin_list, l_name='bin_list')
 
     if not check_complete_list(lb, nb_vars, -INF):
         raise ValueError("Input error : the vector lb has too many values")
@@ -724,7 +724,7 @@ def _check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list):
         raise ValueError("Input error : some variables are both integer and binary")
 
 
-def _check_arrow_attr(l, l_name):
+def _check_vector_attr(l, l_name):
     def raise_input_error(msg):
         msg_frst_rw = "".join(["Given input, ", l_name, " is incorrect."])
         raise ValueError("\n".join([msg_frst_rw,
@@ -744,9 +744,10 @@ def _check_arrow_attr(l, l_name):
                                                "".join(["The cell involved is the cell ",
                                                         "[", str(rw_cnt), "]"])]))
         try:
-            float(val)
+            if not isinstance(val, (Infinity, NegInfinity)):
+                float(val)
         except:
-            raise raise_input_error("\n".join(["All the values should be numeric",
+            raise raise_input_error("\n".join(["All the values should be numeric or INF",
                                                "".join(["The cell involved is the cell ",
                                                         "[", str(rw_cnt), "]"])]))
 

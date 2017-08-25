@@ -49,7 +49,7 @@ class BaseModel(object):
         self.__filename = "".join([filename, self.__file_ending])
         self.__token = token
         self.__id = None
-        self.options = BaseModel.OPTIONS(sleep_time, debug)
+        self.__options = BaseModel.OPTIONS(sleep_time, debug)
         self.__solver_status = str(SolverStatusCode.NOTSTARTED)
         self.__se_status = str(SEStatusCode.NOTSTARTED)
 
@@ -57,10 +57,12 @@ class BaseModel(object):
         self.use_http = http_mode
         
         if self.use_http:
-            self.connection = HttpConnection(self)
+            self.connection = HttpConnection(self, self.__token,
+                                             self.__options.sleep_time)
         else:
-            self.connection = GrpcConnection(self, self.__token)
-            
+            self.connection = GrpcConnection(self, self.__token,
+                                             self.__options.sleep_time)
+
         LOGGER.debug("creating model with filename= " + self.__filename)
 
     def build_str_model(self):
@@ -82,7 +84,7 @@ class BaseModel(object):
         Error: if there is a connection problem
         """
 
-        self.__id, self.__se_status, result = self.connection.manage_solving(self)
+        self.__id, self.__se_status, result = self.connection.manage_solving()
         self.__solver_status = self._process_solution(result)
         LOGGER.debug("Results obtained : {}".format(self.solver_status))
 

@@ -19,9 +19,11 @@ LOGGER = _get_logger()
 
 
 class BaseConnection():
-    def manage_solving(self, model):
+    def __init__(self, model, sleep_time):
         self.model = model
-        
+        self.sleep_time = sleep_time
+
+    def manage_solving(self):
         self._create_job()
         self._schedule_job()
         se_status = self._wait_results()
@@ -31,10 +33,12 @@ class BaseConnection():
 
 
 class GrpcConnection(BaseConnection):
-    def __init__(self, token):
+    def __init__(self, model, token, sleep_time):
         """initiate the connection class for grpc"""
+        super(GrpcConnection, self).__init__(model=model,
+                                             sleep_time=sleep_time)
         self._prepare_grpc()
-        self._grpc_metadata = [("authorization", "".join(["api-key ", token]))]
+        self.__grpc_metadata = [("authorization", "".join(["api-key ", token]))]
 
     def _prepare_grpc(self):
         """prepare objects needed for grpc"""
@@ -53,7 +57,7 @@ class GrpcConnection(BaseConnection):
 
         req = CreateJobRequest(problems=[pb], options={})
         try:
-            resp_obj = self._solve_engine.Create(req, metadata=self._grpc_metadata)
+            resp_obj = self._solve_engine.Create(req, metadata=self.__grpc_metadata)
         except grpc.RpcError as err:
             raise grpc.RpcError(err.details())
 
@@ -69,7 +73,7 @@ class GrpcConnection(BaseConnection):
 
         try:
             self._solve_engine.Schedule(JobRequest(id=self._id),
-                                    metadata=self._grpc_metadata)
+                                    metadata=self.__grpc_metadata)
         except grpc.RpcError as err:
             raise grpc.RpcError(err.details())
 
@@ -81,7 +85,7 @@ class GrpcConnection(BaseConnection):
         while True:
             try:
                 resp_obj = self._solve_engine.Status(JobRequest(id=self._id),
-                                                 metadata=self._grpc_metadata)
+                                                 metadata=self.__grpc_metadata)
             except grpc.RpcError as err:
                 raise grpc.RpcError(err.details())
 
@@ -106,7 +110,7 @@ class GrpcConnection(BaseConnection):
             elif se_status == SEStatusCode.STOPPED:
                 raise ValueError("Error with Solve engine : the job has been manually cancelled")
             
-            time.sleep(self.model.options.sleep_time)
+            time.sleep(self.sleep_time)
             sec_cnt += 1
         return se_status
 
@@ -116,7 +120,7 @@ class GrpcConnection(BaseConnection):
         
         try:
             resp_obj = self._solve_engine.GetResults(JobRequest(id=self._id),
-                                                 metadata=self._grpc_metadata)
+                                                 metadata=self.__grpc_metadata)
         except grpc.RpcError as err:
             raise grpc.RpcError(err.details())
 
@@ -132,9 +136,10 @@ class GrpcConnection(BaseConnection):
 
 
 class HttpConnection(BaseConnection):
-    def __init__(self, model, token):
-        self.model = model
-        self._headers = {"Authorization": "api-key {}".format(token)}
+    def __init__(self, model, token, sleep_time):
+        super(HttpConnection, self).__init__(model=model,
+                                             sleep_time=sleep_time)
+        self.__headers = {"Authorization": "api-key {}".format(token)}
     
     def _create_job(self):
         """create a job by sending the problem to Solveengine
@@ -194,7 +199,7 @@ class HttpConnection(BaseConnection):
             elif se_status == SEStatusCode.STOPPED:
                 raise ValueError("Error with Solve engine : the job has been manually cancelled")
 
-            time.sleep(self.model.options.sleep_time)
+            time.sleep(self.sleep_time)
             sec_cnt += 1
         return se_status
 
@@ -219,7 +224,7 @@ class HttpConnection(BaseConnection):
                        "".join([self._id, "/"]) if with_job_id else "",
                        str(path) if path else ""])
         try:
-            result = getattr(requests, msgtype)(url, headers=self._headers, **kwargs)
+            result = getattr(requests, msgtype)(url, headers=self.__headers, **kwargs)
         except requests.RequestException as err:
             raise requests.RequestException(err.response)
 
