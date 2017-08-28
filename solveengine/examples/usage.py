@@ -65,6 +65,9 @@ z3 = model.add_var("z3", lb=-INF, ub=23)
 # example of a continuous variable with lb=-INF, ub=INF
 z1 = model.add_continious_var("z1")
 
+# if the variable is lost, you can get it back with get_variable()
+z1 = model.get_variable("z1")
+
 # change / print bounds
 z1.lb = 12
 z1.ub = 34
@@ -137,13 +140,20 @@ import numpy as np
 #
 #objective function
 f = [-2,1,3]
+#or
+f = np.array([-2, 1, 3])
 
 #inequality constraints coefficients : left and right sides
-A = np.array([[2,3,1], [-1,0,4]])
+A = np.array([[2, 3, 1], [-1, 0, 4]])
+#or
+A = [[2, 3, 1], [-1, 0, 4]]
+
 b = [1,0]
 
 #[equality constraints coefficients : left and right sides]
 Aeq = np.array([[1,5]])
+#or
+Aeq = [[1 ,5]]
 beq = [-2.5]
 
 #[lower and upper bounds]
@@ -152,8 +162,11 @@ ub = [5, 10, INF]
 
 #[list of integer/binary variables, 1 for integer/binary]
 #In case of conflict with bounds, binary has priority
-int_list = [0,0,1]
-bin_list = [1,0,0]
+int_list = [0, 0, 1]
+bin_list = [1, 0, 0]
+
+# these inputs can as well be classes that return something with respectively [i][j] and [i]
+# all the values inside must be called in float()
 
 ######################################
 #Reset the model and set it using these matrices
@@ -164,10 +177,15 @@ model.build_with_matrices(f, A, b,
 ######################################
 # check the model
 #
-print(model.get_file_str())
-print(model.constraints)
+print(model.build_str_file())
 print(model.filename)
 model.update_filename("new_name")
+
+# You can know the index for each constraint by printing them
+model.print_constraints()
+# You can remove constraint knowing its index
+model.remove_constraint_with_index(index=-1)
+
 
 # solving the model
 #
@@ -200,12 +218,12 @@ if model.se_status == SEStatusCode.COMPLETED:
         print("z2=", z2.value)
         print("z3=", z3.value)
         
-        #print variables values
+        #or
         for key, value in model.variables:
             print(key, "=", value)
             
         #print summary
-        model.print_result()
+        model.print_results()
 
     # status codes without solution
     if model.solver_status in [SolverStatusCode.INFEASIBLE,
