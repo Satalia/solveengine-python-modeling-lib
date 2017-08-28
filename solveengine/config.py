@@ -12,7 +12,7 @@ class SEUrls(StrEnum):
 
 class SolverStatusCode(StrEnum):
     """Enum for the status codes returned by the solvers"""
-    INTERUPTED = "interupted"
+    INTERRUPTED = "interrupted"
     NOTSTARTED = "notstarted"
     OPTIMAL = "optimal"
     INFEASIBLE = "infeasible"

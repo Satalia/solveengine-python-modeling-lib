@@ -89,6 +89,8 @@ class BaseModel(object):
         LOGGER.debug("Results obtained : {}".format(self.solver_status))
 
         self.print_if_interactive("Solving done : {}".format(self.solver_status))
+        if self.interactive:
+            stdout.write("\n")
 
     @property
     def solver_status(self):
