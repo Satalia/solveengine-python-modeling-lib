@@ -7,7 +7,7 @@ import logging
 from sys import stdout
 
 from .connection import GrpcConnection, HttpConnection
-from .helper import _get_logger
+from .helper import _get_logger, check_instance
 from .config import SolverStatusCode, SEStatusCode
 
 LOGGER = _get_logger()
@@ -32,31 +32,37 @@ class BaseModel(object):
 
     debug(boolean): active the debug output
     """
-    OPTIONS = namedtuple("Options", 'sleeptime debug')
+    OPTIONS = namedtuple("Options", 'sleep_time debug')
 
-    def __init__(self, token, filename="model", run_time_limit=600, sleeptime=2, debug=False,
+    def __init__(self, token, filename="model", sleep_time=2, debug=False,
                  file_ending=".lp", interactive_mode=False, http_mode=False):
         if debug:
             LOGGER.setLevel(logging.DEBUG)
         if file_ending not in [".lp", ".cnf"]:
-            raise ValueError("Filetype {} not supported".format(file_ending))
+            raise ValueError("File type {} not supported".format(file_ending))
+
+        _check_init(token, filename, sleep_time,
+                   debug, file_ending, interactive_mode,
+                   http_mode)
+
         self.__file_ending = file_ending
         self.__filename = "".join([filename, self.__file_ending])
         self.__token = token
         self.__id = None
-        self.__options = BaseModel.OPTIONS(sleeptime, debug)
+        self.__options = BaseModel.OPTIONS(sleep_time, debug)
         self.__solver_status = str(SolverStatusCode.NOTSTARTED)
         self.__se_status = str(SEStatusCode.NOTSTARTED)
-        #self.run_time_limit = run_time_limit
 
         self.interactive = interactive_mode
         self.use_http = http_mode
         
         if self.use_http:
-            self.connection = HttpConnection()
+            self.connection = HttpConnection(self, self.__token,
+                                             self.__options.sleep_time)
         else:
-            self.connection = GrpcConnection(self.__token)
-            
+            self.connection = GrpcConnection(self, self.__token,
+                                             self.__options.sleep_time)
+
         LOGGER.debug("creating model with filename= " + self.__filename)
 
     def build_str_model(self):
@@ -78,7 +84,7 @@ class BaseModel(object):
         Error: if there is a connection problem
         """
 
-        self.__id, self.__se_status, result = self.connection.manage_solving(self)
+        self.__id, self.__se_status, result = self.connection.manage_solving()
         self.__solver_status = self._process_solution(result)
         LOGGER.debug("Results obtained : {}".format(self.solver_status))
 
@@ -118,3 +124,21 @@ class BaseModel(object):
         """print a line replacing the current one only if mode interactive asked"""
         if self.interactive:
             stdout.write("".join(["\r", msg, " " * 20]))
+
+def _check_init(token, filename, sleep_time,
+                   debug, file_ending, interactive_mode,
+                   http_mode):
+    check_instance(fct_name="init model", value=token,
+                   name="token", type_=str)
+    check_instance(fct_name="init model", value=filename,
+                   name="filename", type_=str)
+    check_instance(fct_name="init model", value=sleep_time,
+                   name="sleep_time", type_=(int, float))
+    check_instance(fct_name="init model", value=debug,
+                   name="debug", type_=bool)
+    check_instance(fct_name="init model", value=file_ending,
+                   name="file_ending", type_=str)
+    check_instance(fct_name="init model", value=token,
+                   name="token", type_=str)
+
+

@@ -33,7 +33,7 @@ class SATModel(BaseModel):
     debug(boolean): active the debug output
     """
 
-    def __init__(self, token, filename="model", sleeptime=2,
+    def __init__(self, token, filename="model", sleep_time=2,
                  debug=False,
                  interactive_mode=False, http_mode=False):
         """initialise the model
@@ -49,12 +49,14 @@ class SATModel(BaseModel):
             ATTRIBUTES :
                 __variables : dictionary of problem variables, var_id : var_instance
                 __variables_name : dictionary of problem variables, var_name : var_instance
+                __lst_variables : list of variables, to keep the order
+                              of the vars they have been added with
                 __constraints : list of constraints
         """
 
         super(SATModel, self).__init__(token=token,
                                        filename=filename,
-                                       sleeptime=sleeptime,
+                                       sleep_time=sleep_time,
                                        debug=debug,
                                        file_ending=".cnf",
                                        interactive_mode=interactive_mode,
@@ -62,6 +64,7 @@ class SATModel(BaseModel):
 
         self.__variables = dict()
         self.__variables_name = dict()
+        self.__lst_variables = list()
         self.__constraints = []
 
     def _process_solution(self, result_obj):
@@ -97,6 +100,7 @@ class SATModel(BaseModel):
         new_var = Var(name, new_id)
         self.__variables_name[name] = new_var
         self.__variables[new_id] = new_var
+        self.__lst_variables.append(new_var)
         return new_var
 
     def add_constraint_expr(self, expr):
@@ -150,6 +154,7 @@ class SATModel(BaseModel):
                                        "".join(["Here is the path given : ", file_path])]))
         self.__variables = dict()
         self.__variables_name = dict()
+        self.__lst_variables = list()
         self.__constraints = []
         if update_name:
             self.update_filename(file_path.split("/")[-1])
@@ -184,7 +189,6 @@ class SATModel(BaseModel):
         check_instance(fct_name="remove_constraint_with_index",
                        value=index, name='index', type_=int)
         try:
-            self.__constraints[index] = None
             self.__constraints.pop(index)
         except:
             raise ValueError("".join(["The index specified, ", str(index),
@@ -230,10 +234,9 @@ class SATModel(BaseModel):
     @property
     def var_results(self):
         """return a dictionary of the variables {'var_id':value}"""
+        def make_tuple(var): return tuple([var.id, var.value])
 
-        def make_tuple(var): return tuple([var.id_, var.value])
-
-        iter_tuples = map(make_tuple, self.__variables.values())
+        iter_tuples = map(make_tuple, self.__lst_variables)
         return dict(iter_tuples)
 
     @property
@@ -242,14 +245,14 @@ class SATModel(BaseModel):
 
         def make_tuple(var): return tuple([var.name, var.value])
 
-        iter_tuples = map(make_tuple, self.__variables.values())
+        iter_tuples = map(make_tuple, self.__lst_variables)
         return dict(iter_tuples)
 
     def print_results(self):
         """prints a summary of the results returned from solve engine"""
         lst_lines = ["".join(["Status : ", self.solver_status])]
         lst_lines.extend([var.result 
-                          for var in self.__variables.values()])
+                          for var in self.__lst_variables])
         print("\n".join(lst_lines))
 
     def build_str_model(self):
@@ -486,7 +489,7 @@ class Var(Expr):
     def value(self):
         """get the solution value of the variable"""
         if self.__value is None:
-            raise ValueError("no value assigned yet")
+            return "not computed"
         return self.__value
 
     @property
@@ -501,12 +504,6 @@ class Var(Expr):
         if not isinstance(value, bool):
             raise ValueError("wrong type for variable value")
         self.__value = value
-
-    def change_name(self, name):
-        """change the name"""
-        check_instance(fct_name="change_name",
-                       value=name, name='name', type_=str)
-        self.__name = name
 
 def _get_first_rw(lst_rws, path):
     rw_cnt, max_lst = (0, len(lst_rws))

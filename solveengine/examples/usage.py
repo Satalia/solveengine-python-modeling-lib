@@ -48,19 +48,19 @@ model.set_direction(Direction.MINIMIZE)
 # lb=-INF
 # ub=INF
 
-# two ways to create a binary variable
+# binary variable
 x1 = model.add_binary_var(name="x1")
-x2 = model.add_var("x2", lb=0, ub=1, vartype=VarType.INTEGER)
+x2 = model.add_binary_var("x2", lb=0, ub=1)
 
-# two ways to create an integer variable
+# integer variable
 # note that for y1, ub=INF is set by default
 y1 = model.add_integer_var(name="y1", lb=-13)
-y2 = model.add_var(name="y2", lb=-13, ub=INF, vartype=VarType.INTEGER)
+y2 = model.add_integer_var(name="y2", lb=-13, ub=INF)
 
-# two ways to create a continuous variable
+# continuous variable
 # note that for z2, lb=-INF is set by default
 z2 = model.add_continious_var("z2", ub=23)
-z3 = model.add_var("z3", lb=-INF, ub=23, vartype=VarType.CONTINIOUS)
+z3 = model.add_var("z3", lb=-INF, ub=23)
 
 # example of a continuous variable with lb=-INF, ub=INF
 z1 = model.add_continious_var("z1")

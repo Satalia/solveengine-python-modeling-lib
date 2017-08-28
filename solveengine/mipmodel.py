@@ -10,7 +10,7 @@ from enum import Enum
 from collections import namedtuple
 from numpy import ndarray
 
-from .helper import StrEnum, _get_logger, check_complete_list, check_instance
+from .helper import StrEnum, _get_logger, check_instance
 
 from .basemodel import BaseModel, SolverStatusCode
 
@@ -101,7 +101,7 @@ class MIPModel(BaseModel):
     DEFAULT_EQ_NAME = "cEq"
     DEFAULT_INEQ_NAME = "cIneq"
 
-    def __init__(self, token, filename="model", sleeptime=2,
+    def __init__(self, token, filename="model", sleep_time=2,
                  debug=False,
                  interactive_mode=False, http_mode=False):
         """initialise the model
@@ -125,7 +125,7 @@ class MIPModel(BaseModel):
         """
         super(MIPModel, self).__init__(token=token,
                                        filename=filename,
-                                       sleeptime=sleeptime,
+                                       sleep_time=sleep_time,
                                        debug=debug,
                                        file_ending=".lp",
                                        interactive_mode=interactive_mode,
@@ -254,9 +254,9 @@ class MIPModel(BaseModel):
         self.set_direction(Direction.MAXIMIZE)
     
     def build_with_matrices(self, f, A, b, 
-                            Aeq=None, beq=[],
-                            lb=[], ub=[], 
-                            int_list=[], bin_list=[]):
+                            Aeq=None, beq=None,
+                            lb=None, ub=None,
+                            int_list=None, bin_list=None):
         """Function to build the model using the Matlab way
         
         Args: 
@@ -276,13 +276,19 @@ class MIPModel(BaseModel):
             errMsg if the Args are not coherent
             None if all is ok
         """
+        Aeq = list() if Aeq is None else Aeq
+        beq = list() if beq is None else beq
+        lb = list() if lb is None else lb
+        ub = list() if ub is None else ub
+        int_list = list() if int_list is None else int_list
+        bin_list = list() if bin_list is None else bin_list
 
         _check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list)
-        self.__build_variables_matrices(len(f), lb, ub, int_list, bin_list)
-        self.__build_objective_matrices(f)
-        self.__build_constraints_matrices(A, b, Aeq, beq)
+        self._build_variables_matrices(len(f), lb, ub, int_list, bin_list)
+        self._build_objective_matrices(f)
+        self._build_constraints_matrices(A, b, Aeq, beq)
 
-    def __build_variables_matrices(self, nb_vars, lb, ub, int_list, bin_list):
+    def _build_variables_matrices(self, nb_vars, lb, ub, int_list, bin_list):
         """reinitiate variables
         build variables like x0, .., xnbVars using matlab-style vectors
         add them to the model's dictionary
@@ -297,25 +303,25 @@ class MIPModel(BaseModel):
             else:
                 self.add_continuous_var(var_name, lb=lb[index], ub=ub[index])
 
-    def __build_objective_matrices(self, f):
+    def _build_objective_matrices(self, f):
         """set the objective function using the list f"""
         expr = _build_expr_coeff_vars(f, self.__lst_variables)
         self.set_obj(expr)
         self.set_to_minimize()
 
-    def __build_constraints_matrices(self, A, b, Aeq, beq):
+    def _build_constraints_matrices(self, A, b, Aeq, beq):
         """build the model's constraints using matlab-style matrices"""
         self.__constraints = []
-        self.__add_constraints_matrices(A, b, boo_equ=False)
+        self._add_constraints_matrices(A, b, boo_equ=False)
         if Aeq is not None:
-            self.__add_constraints_matrices(Aeq, beq, boo_equ=True)
+            self._add_constraints_matrices(Aeq, beq, boo_equ=True)
 
-    def __add_constraints_matrices(self, A, b, boo_equ):
+    def _add_constraints_matrices(self, A, b, boo_equ):
         """add all the constraints deduced from the matrices A and b"""
         lst_tuples = _build_name_index_tuples(self.DEFAULT_EQ_NAME if boo_equ
                                               else self.DEFAULT_INEQ_NAME, len(b))
         for cstr_name, index in lst_tuples:
-            expr = _build_expr_coeff_vars(A[index, :], self.__lst_variables)
+            expr = _build_expr_coeff_vars(A[index], self.__lst_variables)
             if boo_equ:
                 self.add_constraint(expr == b[index], cstr_name)
             else:
@@ -327,6 +333,24 @@ class MIPModel(BaseModel):
                        name='name', type_=str)
         return self.__variables[name]
 
+    def remove_constraint_with_index(self, index):
+        """remove one constraint with the index"""
+        check_instance(fct_name="remove_constraint_with_index",
+                       value=index, name='index', type_=int)
+        try:
+            self.__constraints.pop(index)
+        except:
+            raise ValueError("".join(["The index specified, ", str(index),
+                                      ", is out of range. There are ",
+                                      str(len(self.__constraints)),
+                                      " constraints."]))
+
+    def print_constraints(self):
+        """prints the constraints with the index to remove them in case"""
+        rg = range(0, len(self.__constraints))
+        str_cstrs = list(map(str, self.__constraints))
+        print("\n".join(map(str, zip(rg, str_cstrs))))
+
     @property
     def obj(self):
         """get objective value
@@ -335,19 +359,16 @@ class MIPModel(BaseModel):
         ValueError: if no objective value is stored
         """
         if self.__obj.value is None:
-            raise ValueError("no objective value is stored")
+            return "not computed"
         return self.__obj.value
-    
-    @property
-    def variables(self):
-        """get the results for the variables
 
-        Raises:
-        ValueError: if one variable has no value stored
-        """
-        def get_value(var): return var.value
-        lst_values = list(map(get_value, self.__variables.values()))
-        return dict(zip(self.__variables.keys(), lst_values))
+    @property
+    def var_results(self):
+        """return a dictionary of the variables {'var_id': value}"""
+        def make_tuple(var): return tuple([var.name, var.value])
+
+        iter_tuples = map(make_tuple, self.__lst_variables)
+        return dict(iter_tuples)
 
     def _process_solution(self, result_obj):
         """process the results of the solver"""
@@ -362,9 +383,11 @@ class MIPModel(BaseModel):
 
     def print_results(self):
         """prints a sum up of the results returned from solve engine"""
-        lst_lines = ["".join(["Status : ", self.solver_status])]
+        lst_lines = list()
+        lst_lines.append("".join(["Status : ", self.solver_status]))
         lst_lines.append("".join(["Objective value : ", str(self.obj)]))
-        lst_lines.extend(list(map(str, self.__variables.values())))
+        lst_lines.append("Variables :")
+        lst_lines.extend(list(map(str, self.__lst_variables)))
         print("\n".join(lst_lines))
 
     def build_str_model(self):
@@ -594,11 +617,11 @@ class Var(Expr):
         check_instance(fct_name='create new Var()', value=var_type,
                        name='var_type', type_=VarType)
 
-        self._name = name
+        self.__name = name
         self.var_type = var_type
         self.lb = lb
         self.ub = ub
-        self._value = None
+        self.__value = None
         self.variables = {self: 1}
 
     def __hash__(self):
@@ -611,18 +634,18 @@ class Var(Expr):
         Raises:
         ValueError: if no value has been computed yet
         """
-        if self._value is None:
-            raise ValueError("no solution computed")
-        return self._value
+        if self.__value is None:
+            return "not computed"
+        return self.__value
 
     def set_value(self, val):
         """internal method to set value of variable"""
-        self._value = val
+        self.__value = val
 
     @property
     def name(self):
         """get the name of the variable"""
-        return self._name
+        return self.__name
 
     def lpstr_bounds(self):
         """build the lp string"""
@@ -643,7 +666,20 @@ class Var(Expr):
         return expr
     
     def __str__(self):
-        return "".join([self._name, " : ", str(self._value)])
+        return "".join([self.__name, " : ", str(self.__value)])
+
+
+def _build_name_index_tuples(name, index_max):
+    """return list of tuples [('nameN', N)] of the size indexMax"""
+    def tuple_name_index(n):
+        return tuple(["".join([name, str(n)]), n])
+
+    return list(map(tuple_name_index, range(0, index_max)))
+
+
+def _build_expr_coeff_vars(lst_coeffs, lst_vars):
+    """return the expression given the lists of coefficient and variables"""
+    return sum(coeff * var for coeff, var in zip(lst_coeffs, lst_vars) if coeff != 0)
 
 
 def _check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list):
@@ -652,43 +688,29 @@ def _check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list):
     Complete the vectors lb, ub, int_list, bin_list
     with values by default if they are shorter than the number of variables
     """
-    check_instance(fct_name='build_with_matrices', value=f,
-                   name='f', type_=(list, ndarray))
-    check_instance(fct_name='build_with_matrices', value=A,
-                   name='A', type_=ndarray)
-    check_instance(fct_name='build_with_matrices', value=b,
-                   name='b', type_=list)
+    _check_vector_attr(l=f, l_name='f')
+    _check_matrix_attr(m=A, m_name='A')
+    _check_vector_attr(l=b, l_name='b')
 
     nb_vars = len(f)
-    if len(A.shape) != 2:
-        raise ValueError("Input error : A is not a 2-dimension matrix")
 
-    if A.shape[0] != len(b):
+    if len(A) != len(b):
         raise ValueError("Input error : A and b are differently sized")
-    if A.shape[1] != nb_vars:
+    if len(A[0]) != nb_vars:
         raise ValueError("Input error : A and b are differently sized")
     if Aeq is not None:
-        check_instance(fct_name='build_with_matrices', value=Aeq,
-                       name='Aeq', type_=(list, ndarray))
-        check_instance(fct_name='build_with_matrices', value=beq,
-                       name='beq', type_=list)
+        _check_matrix_attr(m=Aeq, m_name='Aeq')
+        _check_vector_attr(l=beq, l_name='beq')
 
-        if len(Aeq.shape) != 2:
-            raise ValueError("Input error : Aeq is not a 2-dimension matrix")
-
-        if Aeq.shape[0] not in [len(beq), 1]:
+        if len(Aeq) not in [len(beq), 1]:
             raise ValueError("Input error : Aeq and beq are differently sized")
-        if Aeq.shape[1] not in [nb_vars, 0]:
+        if len(Aeq[0]) not in [nb_vars, 0]:
             raise ValueError("Input error : Aeq and f are differently sized")
 
-    check_instance(fct_name='build_with_matrices', value=lb,
-                   name='lb', type_=list)
-    check_instance(fct_name='build_with_matrices', value=ub,
-                   name='ub', type_=list)
-    check_instance(fct_name='build_with_matrices', value=int_list,
-                   name='int_list', type_=list)
-    check_instance(fct_name='build_with_matrices', value=bin_list,
-                   name='bin_list', type_=list)
+    _check_vector_attr(l=lb, l_name='lb')
+    _check_vector_attr(l=ub, l_name='ub')
+    _check_vector_attr(l=int_list, l_name='int_list')
+    _check_vector_attr(l=bin_list, l_name='bin_list')
 
     if not check_complete_list(lb, nb_vars, -INF):
         raise ValueError("Input error : the vector lb has too many values")
@@ -703,14 +725,90 @@ def _check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list):
         raise ValueError("Input error : some variables are both integer and binary")
 
 
-def _build_name_index_tuples(name, index_max):
-    """return list of tuples [('nameN', N)] of the size indexMax"""
-    def tuple_name_index(n):
-        return tuple(["".join([name, str(n)]), n])
+def _check_vector_attr(l, l_name):
+    def raise_input_error(msg):
+        msg_frst_rw = "".join(["Given input, ", l_name, " is incorrect."])
+        raise ValueError("\n".join([msg_frst_rw,
+                                    msg,
+                                    "Here is the input given :",
+                                    str(l)]))
+    try:
+        nb_rws = len(l)
+    except:
+        raise_input_error("len() of it should return the nb of rows")
 
-    return list(map(tuple_name_index, range(0, index_max)))
+    for rw_cnt in range(0, nb_rws):
+        try:
+            val = l[rw_cnt]
+        except:
+            raise raise_input_error("\n".join(["Should be possible to call input[index]",
+                                               "".join(["The cell involved is the cell ",
+                                                        "[", str(rw_cnt), "]"])]))
+        try:
+            if not isinstance(val, (Infinity, NegInfinity)):
+                float(val)
+        except:
+            raise raise_input_error("\n".join(["All the values should be numeric or INF",
+                                               "".join(["The cell involved is the cell ",
+                                                        "[", str(rw_cnt), "]"])]))
 
 
-def _build_expr_coeff_vars(lst_coeffs, lst_vars):
-    """return the expression given the lists of coefficient and variables"""
-    return sum(coeff * var for coeff, var in zip(lst_coeffs, lst_vars) if coeff != 0)
+def _check_matrix_attr(m, m_name):
+    def raise_input_error(msg):
+        msg_frst_rw = "".join(["Given input, ", m_name, " is incorrect."])
+        raise ValueError("\n".join([msg_frst_rw,
+                                   msg,
+                                    "Here is the input given :",
+                                    str(m)]))
+
+    try:
+        nb_rws = len(m)
+    except:
+        raise_input_error("len() of it should return the nb of rows")
+
+    try:
+        frst_rw_ln = len(m[0])
+    except:
+        raise raise_input_error("Should be possible to call input[0]")
+    for rw_cnt in range(0, nb_rws):
+        try:
+            rw_ln = len(m[rw_cnt])
+        except:
+            raise raise_input_error("\n".join(["Should be possible to call len(input[i])",
+                                              "".join(["Row involved is the row ", str(rw_cnt)])]))
+
+        if rw_ln != frst_rw_ln:
+            raise raise_input_error("\n".join(["All the rows should be the same size",
+                                               "".join(["The first row's size was : ",
+                                                        str(frst_rw_ln)]),
+                                               "".join(["The row ", str(rw_cnt),
+                                                        "'s size is : ", str(rw_ln)])]))
+
+        for col_cnt in range(0, frst_rw_ln):
+            try:
+                val = m[rw_cnt][col_cnt]
+            except:
+                raise raise_input_error("\n".join(["Should be possible to call row_value[index]",
+                                                  "".join(["The row involved is the row ",
+                                                           "[", str(rw_cnt), "]"])]))
+            try:
+                float(val)
+            except:
+                raise raise_input_error("\n".join(["All the values should be numeric",
+                                                  "".join(["The cell involved is the cell ",
+                                                           "[", str(rw_cnt), str(col_cnt), "]"])]))
+
+
+def check_complete_list(list_, nb_max, def_value):
+    """make sure the list is long enough
+
+    complete with default value if not
+
+    return False if the list is too long
+    """
+
+    if len(list_) <= nb_max:
+        list_.extend([def_value] * (nb_max - len(list_)))
+        return True
+    else:
+        return False
