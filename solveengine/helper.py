@@ -5,9 +5,8 @@ from enum import Enum
 import logging
 import os
 
-from .config import EXAMPLE_MIP_PATH, EXAMPLE_SAT_PATH
+from .config import EXAMPLE_MIP_PATH, EXAMPLE_SAT_PATH, LOGGER_NAME
 
-LOGGER_NAME = "satalia_solve_engine_logger"
 WORKING_DIR = os.path.dirname(os.path.realpath(__file__))
 
 

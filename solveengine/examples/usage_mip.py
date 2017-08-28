@@ -1,7 +1,7 @@
 """
 This file presents how to create a MIPModel, add variables, add constraints and solve the model using the SolveEngine python interface
 """
-from solveengine import MIPModel, VarType, INF, Direction, SEStatusCode, SolverStatusCode
+from solveengine import MIPModel, INF, Direction, SEStatusCode, SolverStatusCode
 
 ######################################
 # create MIP model
@@ -59,7 +59,7 @@ y2 = model.add_integer_var(name="y2", lb=-13, ub=INF)
 
 # continuous variable
 # note that for z2, lb=-INF is set by default
-z2 = model.add_continious_var("z2", ub=23)
+z2 = model.add_continuous_var("z2", ub=23)
 z3 = model.add_var("z3", lb=-INF, ub=23)
 
 # example of a continuous variable with lb=-INF, ub=INF

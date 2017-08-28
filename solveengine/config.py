@@ -3,7 +3,7 @@ from enum import Enum
 # Solve Engine API key
 SE_URL_GRPC = 'solve.satalia.com:443'
 SE_URL_HTTP = 'https://solve.satalia.com/api/v2/jobs/'
-
+LOGGER_NAME = "satalia_solve_engine_logger"
 EXAMPLE_SAT_PATH = 'examples/usage_sat.py'
 EXAMPLE_MIP_PATH = 'examples/usage_mip.py'
 
