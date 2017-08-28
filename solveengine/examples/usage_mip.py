@@ -16,7 +16,7 @@ filename = "special_model"
 
 # the time (in seconds) the model class waits before checking the server if the result is ready
 # the smaller the number the shorter the intervals
-sleeptime = 3
+sleep_time = 3
 
 # with/without debug printout
 # this does not print debug information for the solvers
@@ -29,7 +29,7 @@ interactive_mode = True
 #if http connections desired set it to True
 http_mode = False
 
-model = MIPModel(token, filename=filename, sleeptime=sleeptime,
+model = MIPModel(token, filename=filename, sleep_time=sleep_time,
                  debug=debug, interactive_mode=interactive_mode,
                  http_mode=http_mode)
 
@@ -50,7 +50,7 @@ model.set_direction(Direction.MINIMIZE)
 
 # binary variable
 x1 = model.add_binary_var(name="x1")
-x2 = model.add_binary_var("x2", lb=0, ub=1)
+x2 = model.add_binary_var("x2")
 
 # integer variable
 # note that for y1, ub=INF is set by default
@@ -63,9 +63,9 @@ z2 = model.add_continious_var("z2", ub=23)
 z3 = model.add_var("z3", lb=-INF, ub=23)
 
 # example of a continuous variable with lb=-INF, ub=INF
-z1 = model.add_continious_var("z1")
+z1 = model.add_continuous_var("z1")
 
-# if the variable is lost, you can get it back with get_variable()
+# if a variable you added is lost, you can get it back with get_variable()
 z1 = model.get_variable("z1")
 
 # change / print bounds

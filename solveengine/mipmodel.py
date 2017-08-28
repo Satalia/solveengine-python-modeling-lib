@@ -109,7 +109,7 @@ class MIPModel(BaseModel):
         INPUTS :
             token : api-key to solve with solve engine
             filename : problem name that will figure on SolveEngine
-            sleeptime : amount of seconds waited between two status requests
+            sleep_time : amount of seconds waited between two status requests
             debug : to initiate, or not, Logger()
             interactive_mode : to print the advances of the solving while solving
             http_mode : use http requests if True, GRPC if False
