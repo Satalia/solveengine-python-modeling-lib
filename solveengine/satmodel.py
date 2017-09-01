@@ -21,27 +21,36 @@ class SATModel(BaseModel):
     allows to model SAT problems
 
     Attributes:
-    token: the SolveEngine token provided by the website,
-    this is necessary to connect to the solver
+    model_name: the name that the uploaded file should have,
+    without extension, default is model
 
-    filename: the filename that the uploaded file should have,
-    default is model
-
-    sleeptime: the time we should sleep between checks if the SolveEngine
+    sleep_time: the time we should sleep between checks if the SolveEngine
     is finished solving the problem
 
     debug(boolean): active the debug output
+
+    interactive_mode(boolean): active information printing while solving
+
+    http_mode(boolean): active http requests instead of grpc
+
+    __variables/__variables_name(dict):used to store the variables
+    indexing them by id or by name
+
+    __lst_variables: list of variables, in the order of added
+    used to get the variables in a logical order
+
+    __constraints: list of the added constraints
     """
 
-    def __init__(self, token, filename="model", sleep_time=2,
+    def __init__(self, token, model_name="model", sleep_time=2,
                  debug=False,
                  interactive_mode=False, http_mode=False):
         """initialise the model
 
             INPUTS :
                 token : api-key to solve with solve engine
-                filename : problem name that will figure on SolveEngine
-                sleeptime : amount of seconds waited between two status requests
+                model_name : problem name that will figure on SolveEngine
+                sleept_ime : amount of seconds waited between two status requests
                 debug : to initiate, or not, Logger()
                 interactive_mode : to print the advances of the solving while solving
                 http_mode : use http requests if True, GRPC if False
@@ -53,19 +62,23 @@ class SATModel(BaseModel):
                               of the vars they have been added with
                 __constraints : list of constraints
         """
-
+        check_instance(fct_name='init SATModel', value=model_name,
+                       name='model_name', type_=str)
+        if not model_name.endswith(".cnf"):
+            file_name = "".join([model_name, ".cnf"])
+        else:
+            file_name = model_name
         super(SATModel, self).__init__(token=token,
-                                       filename=filename,
+                                       file_name=file_name,
                                        sleep_time=sleep_time,
                                        debug=debug,
-                                       file_ending=".cnf",
                                        interactive_mode=interactive_mode,
                                        http_mode=http_mode)
 
         self.__variables = dict()
         self.__variables_name = dict()
         self.__lst_variables = list()
-        self.__constraints = []
+        self.__constraints = list()
 
     def _process_solution(self, result_obj):
         """process the results of the solver"""
@@ -143,7 +156,7 @@ class SATModel(BaseModel):
                                value=constraint, name="constraint",
                                type_=(list, Expr))
 
-    def build_from_file(self, file_path, update_name=True):
+    def build_from_file(self, file_path):
         check_instance(fct_name="build_from_file", value=file_path,
                        name="file_path", type_=str)
         if not file_path.endswith(".cnf"):
@@ -156,8 +169,6 @@ class SATModel(BaseModel):
         self.__variables_name = dict()
         self.__lst_variables = list()
         self.__constraints = []
-        if update_name:
-            self.update_filename(file_path.split("/")[-1])
 
         with open(file_path, 'r') as f:
             pb_txt = f.read()
@@ -301,7 +312,7 @@ class Expr(object):
 
 class NEG(Expr):
     """negation expression"""
-    OPERATOR = "!"
+    OPERATOR = "-"
 
     def __init__(self, inner):
         assert not isinstance(inner, NEG)
@@ -333,10 +344,10 @@ class NEG(Expr):
             expr = expr.get_equivalent_expr()
 
         if isinstance(expr, AND):
-            return OR(*[NEG(x) for x in expr.content]).convert_to_cnf()
+            return OR(*[ - x for x in expr.content]).convert_to_cnf()
 
         if isinstance(expr, OR):
-            return AND(*[NEG(x) for x in expr.content]).convert_to_cnf()
+            return AND(*[ - x for x in expr.content]).convert_to_cnf()
 
         raise ValueError("found not supported inner type {}".format(self.inner))
 
@@ -505,6 +516,7 @@ class Var(Expr):
             raise ValueError("wrong type for variable value")
         self.__value = value
 
+
 def _get_first_rw(lst_rws, path):
     rw_cnt, max_lst = (0, len(lst_rws))
     while not lst_rws[rw_cnt].startswith("p cnf "):
@@ -515,6 +527,7 @@ def _get_first_rw(lst_rws, path):
                                                  " with 'p cnf ' found"]),
                                        "".join(["Here is the path sent : ", path])]))
     return rw_cnt + 1
+
 
 def _from_line_to_rw(line, path):
     l = []

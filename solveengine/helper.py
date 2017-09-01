@@ -3,31 +3,8 @@
 """
 from enum import Enum
 import logging
-import os
 
-from .config import EXAMPLE_MIP_PATH, EXAMPLE_SAT_PATH, LOGGER_NAME
-
-WORKING_DIR = os.path.dirname(os.path.realpath(__file__))
-
-
-def help_sat():
-    """returns the str value for the content
-    of the example usage for SAT modelling
-    """
-    with open(os.path.join(WORKING_DIR, EXAMPLE_SAT_PATH), 'r') as f:
-        res = f.read()
-        f.close()
-    return res
-
-
-def help_mip():
-    """returns the str value for the content
-        of the example usage for MIP modelling
-    """
-    with open(os.path.join(WORKING_DIR, EXAMPLE_MIP_PATH), 'r') as f:
-        res = f.read()
-        f.close()
-    return res
+LOGGER_NAME = "satalia_solve_engine_logger"
 
 
 class SERequests(Enum):

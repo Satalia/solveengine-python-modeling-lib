@@ -35,6 +35,7 @@ class Infinity:
     def __repr__(self):
         return "INF"
 
+
 class NegInfinity:
     """class to represent -infinity
 
@@ -88,46 +89,54 @@ class MIPModel(BaseModel):
     token: the SolveEngine token provided by the website,
     this is necessary to connect to the solver
 
-    filename: the filename that the uploaded file should have,
-    default is model
+    model_name: the name that the uploaded file should have,
+    without extension, default is model
 
-    sleeptime: the time we should sleep between checks if the SolveEngine
+    sleep_time: the time we should sleep between checks if the SolveEngine
     is finished solving the problem
 
     debug(boolean): active the debug output
+
+    interactive_mode(boolean): active information printing while solving
+
+    http_mode(boolean): active http requests instead of grpc
+
+    __variables : dictionary of problem variables, var_name : var_instance
+    __lst_variables : list of variables, to keep the order
+                    of the vars they have been added with
+    __constraints : list of constraints
+    __obj : objective function defined with namedtuple,
+            attributes : expression, direction (min/max),
+            and the value updated when solved
     """
     OBJECTIVE = namedtuple('Objective', 'expr direction value')
     DEFAULT_VAR_NAME = "x"
     DEFAULT_EQ_NAME = "cEq"
     DEFAULT_INEQ_NAME = "cIneq"
 
-    def __init__(self, token, filename="model", sleep_time=2,
+    def __init__(self, token, model_name="model", sleep_time=2,
                  debug=False,
                  interactive_mode=False, http_mode=False):
         """initialise the model
 
         INPUTS :
             token : api-key to solve with solve engine
-            filename : problem name that will figure on SolveEngine
+            model_name : problem name that will figure on SolveEngine
             sleep_time : amount of seconds waited between two status requests
             debug : to initiate, or not, Logger()
             interactive_mode : to print the advances of the solving while solving
             http_mode : use http requests if True, GRPC if False
-
-        ATTRIBUTES :
-            __variables : dictionary of problem variables, var_name : var_instance
-            __lst_variables : list of variables, to keep the order
-                              of the vars they have been added with
-            __constraints : list of constraints
-            __obj : objective function defined with namedtuple,
-                    attributes : expression, direction (min/max),
-                    and the value updated when solved
         """
+        check_instance(fct_name='init MIPModel', value=model_name,
+                       name='model_name', type_=str)
+        if not model_name.endswith(".lp"):
+            file_name = "".join([model_name, ".lp"])
+        else:
+            file_name = model_name
         super(MIPModel, self).__init__(token=token,
-                                       filename=filename,
+                                       file_name=file_name,
                                        sleep_time=sleep_time,
                                        debug=debug,
-                                       file_ending=".lp",
                                        interactive_mode=interactive_mode,
                                        http_mode=http_mode)
         self.__variables = dict()

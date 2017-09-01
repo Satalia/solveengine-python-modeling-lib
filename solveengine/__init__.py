@@ -15,5 +15,5 @@ _create_logger()
 
 from .mipmodel import MIPModel, INF, Direction
 from .satmodel import SATModel
-from .config import SEStatusCode, SolverStatusCode
-from .helper import help_sat, help_mip
+from .config import SEStatusCode, SolverStatusCode, help_sat, help_mip
+

@@ -1,22 +1,22 @@
 """
 This file presents how to create a SATModel, add variables, add constraints and solve the model using the SolveEngine python interface
 """
-from solveengine import SATModel, VarType, SEStatusCode, SolverStatusCode
+from solveengine import SATModel, SEStatusCode, SolverStatusCode
 
 ######################################
 # create SAT model
 #
 # the token
-token = "2prMEegqCAFB5eqmfuXmGufyJ+PcMzJbZaQcvqrhtx4="
+token = "#2prMEegqCAFB5eqmfuXmGufyJ+PcMzJbZaQcvqrhtx4="
 
 # the name of the file being used when uploading the problem file
 # (to be able to find the file in the webinterface of the SolveEngine easier)
 # default: model
-filename = "special_model"
+file_name = "special_model"
 
 # the time (in seconds) the model class waits before checking the server if the result is ready
 # the smaller the number the shorter the intervals
-sleeptime = 3
+sleep_time = 3
 
 # with/without debug printout
 # this does not print debug information for the solvers
@@ -29,7 +29,7 @@ interactive_mode = True
 #if http connections desired set it to True
 http_mode = False
 
-model = SATModel(token, filename=filename, sleeptime=sleeptime, 
+model = SATModel(token, model_name=file_name, sleep_time=sleep_time,
                  debug=debug, interactive_mode=interactive_mode,
                  http_mode=http_mode)
 
@@ -54,13 +54,14 @@ x3 = model.get_variable_with_name(name="x3")
 
 # Building expressions
 #
-# !x1 means negative(x1)
-expr = !x1
+# -x1 means negative(x1)
+# when expression displayed, will show !x1
+expr = -x1
 
 # | is used for 'OR'; & is used for 'AND'
 expr = (x1 | x2) & x3
 
-# ^ is used for 'XOR'  (equivalent to (x1 | x2) & !(x1 & x2)
+# ^ is used for 'XOR'  (equivalent to (x1 | x2) & -(x1 & x2)
 expr = x1 ^ x2
 
 # (==, !=, <=) are used to express equivalence, non equivalence and implication
@@ -78,7 +79,7 @@ model.add_constraint_expr(expr)
 # no need to build the variables first
 #they will be automatically added to the model with a generated name
 
-#Add a constraint (only linked by 'OR')  (equivalent to : x1 | !x5 | x2)
+#Add a constraint (only linked by 'OR')  (equivalent to : x1 | -x5 | x2)
 model.add_constraint_vector([1, -5, 2])
 
 #You can also add several constraints in once
@@ -98,18 +99,15 @@ model.add_list_constraints(lst_constraints=lst_constraints)
 # in a cnf format, starting with p cnf
 
 file_path = '/.../filename.cnf'
-# if update_name=True, the name of the
-# model will take the one from the file
-model.build_from_file(file_path=file_path, update_name=True)
+model.build_from_file(file_path=file_path)
 
 ######################################
 ######################################
 # check the model
 #
 print(model.build_str_model())
-print(model.print_constraints())
-print(model.filename)
-model.update_filename("new_name")
+model.print_constraints()
+print(model.file_name)
 
 # You can know the index for each constraint by printing them
 model.print_constraints()

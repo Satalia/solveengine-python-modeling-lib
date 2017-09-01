@@ -7,12 +7,12 @@ from solveengine import MIPModel, INF, Direction, SEStatusCode, SolverStatusCode
 # create MIP model
 #
 # the token
-token = "2prMEegqCAFB5eqmfuXmGufyJ+PcMzJbZaQcvqrhtx4="
+token = "2prMEegqCAFB5eqmfuXmGufyJ+PcMzJbZaQcvqrhtxg="
 
 # the name of the file being used when uploading the problem file
 # (to be able to find the file in the webinterface of the SolveEngine easier)
 # default: model
-filename = "special_model"
+model_name = "special_model"
 
 # the time (in seconds) the model class waits before checking the server if the result is ready
 # the smaller the number the shorter the intervals
@@ -29,7 +29,7 @@ interactive_mode = True
 #if http connections desired set it to True
 http_mode = False
 
-model = MIPModel(token, filename=filename, sleep_time=sleep_time,
+model = MIPModel(token, model_name=model_name, sleep_time=sleep_time,
                  debug=debug, interactive_mode=interactive_mode,
                  http_mode=http_mode)
 
@@ -60,7 +60,7 @@ y2 = model.add_integer_var(name="y2", lb=-13, ub=INF)
 # continuous variable
 # note that for z2, lb=-INF is set by default
 z2 = model.add_continuous_var("z2", ub=23)
-z3 = model.add_var("z3", lb=-INF, ub=23)
+z3 = model.add_continuous_var("z3", lb=-INF, ub=23)
 
 # example of a continuous variable with lb=-INF, ub=INF
 z1 = model.add_continuous_var("z1")
@@ -148,12 +148,12 @@ A = np.array([[2, 3, 1], [-1, 0, 4]])
 #or
 A = [[2, 3, 1], [-1, 0, 4]]
 
-b = [1,0]
+b = [1, 0]
 
 #[equality constraints coefficients : left and right sides]
-Aeq = np.array([[1,5]])
+Aeq = np.array([[1, 5, 0]])
 #or
-Aeq = [[1 ,5]]
+Aeq = [[1, 5, 0]]
 beq = [-2.5]
 
 #[lower and upper bounds]
@@ -177,9 +177,8 @@ model.build_with_matrices(f, A, b,
 ######################################
 # check the model
 #
-print(model.build_str_file())
-print(model.filename)
-model.update_filename("new_name")
+print(model.build_str_model())
+print(model.file_name)
 
 # You can know the index for each constraint by printing them
 model.print_constraints()

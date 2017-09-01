@@ -19,6 +19,15 @@ LOGGER = _get_logger()
 
 
 class BaseConnection():
+    """MIPModel class
+
+        Create an instance to help connection with SE
+
+        Attributes:
+        model(BaseModel): the model where all the problem attributes are
+        sleep_time: he time we should sleep between checks if the SolveEngine
+                    is finished solving the problem
+    """
     def __init__(self, model, sleep_time):
         self.model = model
         self.sleep_time = sleep_time
@@ -53,7 +62,7 @@ class GrpcConnection(BaseConnection):
         LOGGER.debug("Creating Solve Engine job...")
         pb_data = self.model.build_str_model().encode('ascii')
             
-        pb = Problem(name=self.model.filename, data=pb_data)
+        pb = Problem(name=self.model.file_name, data=pb_data)
 
         req = CreateJobRequest(problems=[pb], options={})
         try:
@@ -150,7 +159,7 @@ class HttpConnection(BaseConnection):
 
         pb_data = b64.b64encode(pb_data).decode('utf-8')
 
-        dict_data = dict(problems=[dict(name=self.model.filename, data=pb_data)])
+        dict_data = dict(problems=[dict(name=self.model.file_name, data=pb_data)])
         resp = self._send("post", with_job_id=False, json=dict_data)
 
         solution = ObjResponse(resp, SERequests.CREATE_JOB)

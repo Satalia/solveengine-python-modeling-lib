@@ -22,31 +22,33 @@ class BaseModel(object):
     token: the SolveEngine token provided by the website, also called "api_key"
     this is necessary to connect to the solver
 
-    filename: the filename that the uploaded file should have,
+    file_name: the file_name that the uploaded file should have,
     default is model.lp, must end with .lp
 
     id: job id provided by Solve Engine when sending a new problem
     
-    sleeptime: the time we should sleep between checks if the SolveEngine
-    is finished solving the problem
+    options : contain :
+        sleep_time: the time we should sleep between checks if the SolveEngine
+                    is finished solving the problem
+        debug(boolean): active the debug output
 
-    debug(boolean): active the debug output
+    __solver_status: status of the solution returned by SE
+    __se_status: current status of the solving processus
     """
     OPTIONS = namedtuple("Options", 'sleep_time debug')
 
-    def __init__(self, token, filename="model", sleep_time=2, debug=False,
+    def __init__(self, token, file_name, sleep_time=2, debug=False,
                  file_ending=".lp", interactive_mode=False, http_mode=False):
         if debug:
             LOGGER.setLevel(logging.DEBUG)
         if file_ending not in [".lp", ".cnf"]:
             raise ValueError("File type {} not supported".format(file_ending))
 
-        _check_init(token, filename, sleep_time,
-                   debug, file_ending, interactive_mode,
-                   http_mode)
+        _check_init(token, sleep_time,
+                    debug, interactive_mode,
+                    http_mode)
 
-        self.__file_ending = file_ending
-        self.__filename = "".join([filename, self.__file_ending])
+        self.__file_name = file_name
         self.__token = token
         self.__id = None
         self.__options = BaseModel.OPTIONS(sleep_time, debug)
@@ -63,7 +65,7 @@ class BaseModel(object):
             self.connection = GrpcConnection(self, self.__token,
                                              self.__options.sleep_time)
 
-        LOGGER.debug("creating model with filename= " + self.__filename)
+        LOGGER.debug("creating model with file_name= " + self.__file_name)
 
     def build_str_model(self):
         raise NotImplementedError()
@@ -108,37 +110,26 @@ class BaseModel(object):
         return self.__se_status
     
     @property
-    def filename(self):
+    def file_name(self):
         """get the name chosen for the file"""
-        return self.__filename
-    
-    def update_filename(self, name):
-        """update the name of the file that will be sent to solveengine
-        after adding the file ending in case
-        """
-        if not name.endswith(self.__file_ending):
-            name = "".join([name, self.__file_ending])
-        self.__filename = name
+        return self.__file_name
 
     def print_if_interactive(self, msg):
         """print a line replacing the current one only if mode interactive asked"""
         if self.interactive:
             stdout.write("".join(["\r", msg, " " * 20]))
 
-def _check_init(token, filename, sleep_time,
-                   debug, file_ending, interactive_mode,
-                   http_mode):
+
+def _check_init(token, sleep_time,
+                debug, interactive_mode,
+                http_mode):
     check_instance(fct_name="init model", value=token,
                    name="token", type_=str)
-    check_instance(fct_name="init model", value=filename,
-                   name="filename", type_=str)
     check_instance(fct_name="init model", value=sleep_time,
                    name="sleep_time", type_=(int, float))
     check_instance(fct_name="init model", value=debug,
                    name="debug", type_=bool)
-    check_instance(fct_name="init model", value=file_ending,
-                   name="file_ending", type_=str)
-    check_instance(fct_name="init model", value=token,
-                   name="token", type_=str)
-
-
+    check_instance(fct_name="init model", value=interactive_mode,
+                   name="interactive_mode", type_=bool)
+    check_instance(fct_name="init model", value=http_mode,
+                   name="http_mode", type_=bool)
