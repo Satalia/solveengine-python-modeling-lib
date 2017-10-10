@@ -304,7 +304,7 @@ class MIPModel(BaseModel):
         """
         self.__variables = dict()
         lst_tuples = _build_name_index_tuples(self.DEFAULT_VAR_NAME, nb_vars)
-        for var_name, index in lst_tuples:
+        for index, var_name in lst_tuples:
             if bin_list[index]:
                 self.add_binary_var(var_name)
             elif int_list[index]:
@@ -329,7 +329,7 @@ class MIPModel(BaseModel):
         """add all the constraints deduced from the matrices A and b"""
         lst_tuples = _build_name_index_tuples(self.DEFAULT_EQ_NAME if boo_equ
                                               else self.DEFAULT_INEQ_NAME, len(b))
-        for cstr_name, index in lst_tuples:
+        for index, cstr_name in lst_tuples:
             expr = _build_expr_coeff_vars(A[index], self.__lst_variables)
             if boo_equ:
                 self.add_constraint(expr == b[index], cstr_name)
@@ -679,11 +679,12 @@ class Var(Expr):
 
 
 def _build_name_index_tuples(name, index_max):
-    """return list of tuples [('nameN', N)] of the size indexMax"""
-    def tuple_name_index(n):
-        return tuple(["".join([name, str(n)]), n])
-
-    return list(map(tuple_name_index, range(0, index_max)))
+    """return list of tuples [(N, 'nameN')] of the size indexMax"""
+    def build_name(tup):
+        return tup[1] + str(tup[0])
+    names = index_max * [name]
+    names = map(build_name, enumerate(names))
+    return list(enumerate(names))
 
 
 def _build_expr_coeff_vars(lst_coeffs, lst_vars):
