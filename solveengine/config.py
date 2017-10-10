@@ -53,10 +53,10 @@ class SEStatusCode(StrEnum):
     NOTSTARTED = "notstarted"
     QUEUED = "queued"
     STARTED = "started"
-    STARTING = 'starting'
-    COMPLETED = 'completed'
-    STOPPED = 'stopped'
-    FAILED = 'failed'
-    INTERRUPTED = 'interrupted'
-    TIMEOUT = 'timeout'
+    STARTING = "starting"
+    COMPLETED = "completed"
+    STOPPED = "stopped"
+    FAILED = "failed"
+    INTERRUPTED = "interrupted"
+    TIMEOUT = "timeout"
 
