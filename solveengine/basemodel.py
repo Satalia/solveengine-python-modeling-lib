@@ -59,10 +59,10 @@ class BaseModel(object):
         self.use_http = http_mode
         
         if self.use_http:
-            self.connection = HttpConnection(self, self.__token,
+            self.client = HttpClient(self, self.__token,
                                              self.__options.sleep_time)
         else:
-            self.connection = GrpcConnection(self, self.__token,
+            self.client = GrpcClient(self, self.__token,
                                              self.__options.sleep_time)
 
         LOGGER.debug("creating model with file_name= " + self.__file_name)
@@ -86,7 +86,7 @@ class BaseModel(object):
         Error: if there is a connection problem
         """
 
-        self.__id, self.__se_status, result = self.connection.manage_solving()
+        self.__id, self.__se_status, result = self.client.manage_solving()
         self.__solver_status = self._process_solution(result)
         LOGGER.debug("Results obtained : {}".format(self.solver_status))
 

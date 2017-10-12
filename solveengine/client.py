@@ -146,7 +146,7 @@ class GrpcClient(BaseClient):
         sec_cnt = 0
         while True:
 
-            se_status = self._wait_results()
+            se_status = self._get_status()
 
             msg = "".join(["Solving the problem, status : ", se_status,
                            " - waiting time : ", str(sec_cnt), "s"])

@@ -294,14 +294,12 @@ class MIPModel(BaseModel):
             errMsg if the Args are not coherent
             None if all is ok
         """
-        Aeq = list() if Aeq is None else Aeq
-        beq = list() if beq is None else beq
         lb = list() if lb is None else lb
         ub = list() if ub is None else ub
         int_list = list() if int_list is None else int_list
         bin_list = list() if bin_list is None else bin_list
 
-        __check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list)
+        _check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list)
         self.__build_variables_matrices(len(f), lb, ub, int_list, bin_list)
         self.__build_objective_matrices(f)
         self.__build_constraints_matrices(A, b, Aeq, beq)
@@ -322,7 +320,7 @@ class MIPModel(BaseModel):
         :updates: model.__variables
         """
         self.__variables = dict()
-        lst_tuples = __build_name_index_tuples(self.DEFAULT_VAR_NAME, nb_vars)
+        lst_tuples = _build_name_index_tuples(self.DEFAULT_VAR_NAME, nb_vars)
         for index, var_name in lst_tuples:
             if bin_list[index]:
                 self.add_binary_var(var_name)
@@ -337,7 +335,7 @@ class MIPModel(BaseModel):
 
         :param f: a list-like, uni-dimensional instance made of doubles
         """
-        expr = __build_expr_coeff_vars(f, self.__lst_variables)
+        expr = _build_expr_coeff_vars(f, self.__lst_variables)
         self.set_obj(expr)
         self.set_to_minimize()
 
@@ -361,10 +359,10 @@ class MIPModel(BaseModel):
         :param b: a list-like, uni-dimensional instance made of doubles
         :param boo_equ: boolean, if true then its an equality constraint
         """
-        lst_tuples = __build_name_index_tuples(self.DEFAULT_EQ_NAME if boo_equ
+        lst_tuples = _build_name_index_tuples(self.DEFAULT_EQ_NAME if boo_equ
                                               else self.DEFAULT_INEQ_NAME, len(b))
         for index, cstr_name in lst_tuples:
-            expr = __build_expr_coeff_vars(A[index], self.__lst_variables)
+            expr = _build_expr_coeff_vars(A[index], self.__lst_variables)
             if boo_equ:
                 self.add_constraint(expr == b[index], cstr_name)
             else:
@@ -426,7 +424,7 @@ class MIPModel(BaseModel):
         iter_tuples = map(make_tuple, self.__lst_variables)
         return dict(iter_tuples)
 
-    def __process_solution(self, result_obj):
+    def _process_solution(self, result_obj):
         """
         process the results of the solver
 
@@ -769,7 +767,7 @@ class Var(Expr):
         return "".join([self.__name, " : ", str(self.__value)])
 
 
-def __build_name_index_tuples(name, index_max):
+def _build_name_index_tuples(name, index_max):
     """return list of tuples [(N, 'nameN')] of the size indexMax"""
     def build_name(tup):
         return tup[1] + str(tup[0])
@@ -778,20 +776,20 @@ def __build_name_index_tuples(name, index_max):
     return list(enumerate(names))
 
 
-def __build_expr_coeff_vars(lst_coeffs, lst_vars):
+def _build_expr_coeff_vars(lst_coeffs, lst_vars):
     """return the expression given the lists of coefficient and variables"""
     return sum(coeff * var for coeff, var in zip(lst_coeffs, lst_vars) if coeff != 0)
 
 
-def __check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list):
+def _check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list):
     """Check that the dimensions of the matrices match with each other
 
     Complete the vectors lb, ub, int_list, bin_list
     with values by default if they are shorter than the number of variables
     """
-    __check_vector_attr(l=f, l_name='f')
-    __check_matrix_attr(m=A, m_name='A')
-    __check_vector_attr(l=b, l_name='b')
+    __check_vector_attr(lst=f, lst_name='f')
+    __check_matrix_attr(mat=A, mat_name='A')
+    __check_vector_attr(lst=b, lst_name='b')
 
     nb_vars = len(f)
 
@@ -800,18 +798,18 @@ def __check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list):
     if len(A[0]) != nb_vars:
         raise ValueError("Input error : A and b are differently sized")
     if Aeq is not None:
-        __check_matrix_attr(m=Aeq, m_name='Aeq')
-        __check_vector_attr(l=beq, l_name='beq')
+        __check_matrix_attr(mat=Aeq, mat_name='Aeq')
+        __check_vector_attr(lst=beq, lst_name='beq')
 
         if len(Aeq) not in [len(beq), 1]:
             raise ValueError("Input error : Aeq and beq are differently sized")
         if len(Aeq[0]) not in [nb_vars, 0]:
             raise ValueError("Input error : Aeq and f are differently sized")
 
-    __check_vector_attr(l=lb, l_name='lb')
-    __check_vector_attr(l=ub, l_name='ub')
-    __check_vector_attr(l=int_list, l_name='int_list')
-    __check_vector_attr(l=bin_list, l_name='bin_list')
+    __check_vector_attr(lst=lb, lst_name='lb')
+    __check_vector_attr(lst=ub, lst_name='ub')
+    __check_vector_attr(lst=int_list, lst_name='int_list')
+    __check_vector_attr(lst=bin_list, lst_name='bin_list')
 
     if not __check_complete_list(lb, nb_vars, -INF):
         raise ValueError("Input error : the vector lb has too many values")
@@ -838,22 +836,25 @@ def __check_vector_attr(lst, lst_name):
     try:
         nb_rws = len(lst)
     except:
-        __raise_input_type_error("len() of it should return the nb of rows")
+        __raise_input_type_error("len() of it should return the nb of rows",
+                                 lst, lst_name)
 
     for rw_cnt in range(0, nb_rws):
         try:
             val = lst[rw_cnt]
         except:
             raise __raise_input_type_error("\n".join(["Should be possible to call input[index]",
-                                               "".join(["The cell involved is the cell ",
-                                                        "[", str(rw_cnt), "]"])]))
+                                                      "".join(["The cell involved is the cell ",
+                                                               "[", str(rw_cnt), "]"])]),
+                                           lst, lst_name)
         try:
             if not isinstance(val, (Infinity, NegInfinity)):
                 float(val)
         except:
             raise __raise_input_type_error("\n".join(["All the values should be numeric or INF",
-                                               "".join(["The cell involved is the cell ",
-                                                        "[", str(rw_cnt), "]"])]))
+                                                      "".join(["The cell involved is the cell ",
+                                                               "[", str(rw_cnt), "]"])]),
+                                           val, lst_name)
 
 
 def __check_matrix_attr(mat, mat_name):
@@ -874,39 +875,46 @@ def __check_matrix_attr(mat, mat_name):
     try:
         nb_rws = len(mat)
     except:
-        __raise_input_type_error("len() of it should return the nb of rows")
+        __raise_input_type_error("len() of it should return the nb of rows",
+                                 mat, mat_name)
 
     try:
         frst_rw_ln = len(mat[0])
     except:
-        raise __raise_input_type_error("Should be possible to call input[0]")
+        raise __raise_input_type_error("Should be possible to call input[0]",
+                                       mat, mat_name)
     for rw_cnt in range(0, nb_rws):
         try:
             rw_ln = len(mat[rw_cnt])
         except:
             raise __raise_input_type_error("\n".join(["Should be possible to call len(input[i])",
-                                              "".join(["Row involved is the row ", str(rw_cnt)])]))
+                                                      "".join(["Row involved is the row ",
+                                                               str(rw_cnt)])]),
+                                           mat[rw_cnt], mat_name)
 
         if rw_ln != frst_rw_ln:
             raise __raise_input_type_error("\n".join(["All the rows should be the same size",
-                                               "".join(["The first row's size was : ",
-                                                        str(frst_rw_ln)]),
-                                               "".join(["The row ", str(rw_cnt),
-                                                        "'s size is : ", str(rw_ln)])]))
+                                                      "".join(["The first row's size was : ",
+                                                               str(frst_rw_ln)]),
+                                                      "".join(["The row ", str(rw_cnt),
+                                                               "'s size is : ", str(rw_ln)])]),
+                                           mat[rw_cnt], mat_name)
 
         for col_cnt in range(0, frst_rw_ln):
             try:
                 val = mat[rw_cnt][col_cnt]
             except:
                 raise __raise_input_type_error("\n".join(["Should be possible to call row_value[index]",
-                                                  "".join(["The row involved is the row ",
-                                                           "[", str(rw_cnt), "]"])]))
+                                                          "".join(["The row involved is the row ",
+                                                                   "[", str(rw_cnt), "]"])]),
+                                               mat[rw_cnt], mat_name)
             try:
                 float(val)
             except:
                 raise __raise_input_type_error("\n".join(["All the values should be numeric",
-                                                  "".join(["The cell involved is the cell ",
-                                                           "[", str(rw_cnt), str(col_cnt), "]"])]))
+                                                          "".join(["The cell involved is the cell ",
+                                                                   "[", str(rw_cnt), str(col_cnt), "]"])]),
+                                               val, mat_name)
 
 
 def __check_complete_list(list_, nb_max, def_value):

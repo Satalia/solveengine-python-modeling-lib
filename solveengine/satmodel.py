@@ -80,7 +80,7 @@ class SATModel(BaseModel):
         self.__lst_variables = list()
         self.__constraints = list()
 
-    def __process_solution(self, result_obj):
+    def _process_solution(self, result_obj):
         """
         process the results of the solver
 
@@ -207,8 +207,8 @@ class SATModel(BaseModel):
 
         lst_rws = pb_txt.split('\n')
 
-        first_rw = __get_first_rw(lst_rws, file_path)
-        lst_lst = [__from_line_to_rw(line, file_path)
+        first_rw = _get_first_rw(lst_rws, file_path)
+        lst_lst = [_from_line_to_rw(line, file_path)
                    for line in lst_rws[first_rw:]
                    if len(line.replace(" ", "")) > 0]
 
@@ -588,7 +588,7 @@ class Var(Expr):
         self.__value = value
 
 
-def __get_first_rw(lst_rws, path):
+def _get_first_rw(lst_rws, path):
     rw_cnt, max_lst = (0, len(lst_rws))
     while not lst_rws[rw_cnt].startswith("p cnf "):
         rw_cnt += 1
@@ -600,7 +600,7 @@ def __get_first_rw(lst_rws, path):
     return rw_cnt + 1
 
 
-def __from_line_to_rw(line, path):
+def _from_line_to_rw(line, path):
     l = []
     for i in line.split(" ")[:-1]:
         try:
