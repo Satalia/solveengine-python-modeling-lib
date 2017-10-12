@@ -6,7 +6,7 @@ from collections import namedtuple
 import logging
 from sys import stdout
 
-from .connection import GrpcConnection, HttpConnection
+from .client import GrpcClient, HttpClient
 from .helper import _get_logger, check_instance
 from .config import SolverStatusCode, SEStatusCode
 
@@ -123,6 +123,23 @@ class BaseModel(object):
 def _check_init(token, sleep_time,
                 debug, interactive_mode,
                 http_mode):
+    """
+    Check that all the initialising input suit the model
+
+    :param token: string value of the id needed
+            from SolveEngine to identify the user
+    :param sleep_time: double value of the time
+            requested by the user between two
+            status requests of the job
+    :param debug: boolean value, True if the
+            user doesn't want debug messages to be displayed
+    :param interactive_mode: boolean, True if the
+            user wants solving status messages to be displayed
+    :param http_mode: boolean, True if the user
+            wants the requests to follow http methods,
+            instead it will use GRPC
+    :return:
+    """
     check_instance(fct_name="init model", value=token,
                    name="token", type_=str)
     check_instance(fct_name="init model", value=sleep_time,

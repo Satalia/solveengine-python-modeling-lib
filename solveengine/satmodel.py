@@ -80,8 +80,14 @@ class SATModel(BaseModel):
         self.__lst_variables = list()
         self.__constraints = list()
 
-    def _process_solution(self, result_obj):
-        """process the results of the solver"""
+    def __process_solution(self, result_obj):
+        """
+        process the results of the solver
+
+        :param result_obj: the object given as a response
+            from Solveengine after solving the problem
+        :return: s_status: the status of the job of solving
+        """
         s_status = result_obj.status
         if s_status not in SolverStatusCode.get_values():
             raise ValueError("solver status unknown:", self.solver_status)
@@ -93,10 +99,16 @@ class SATModel(BaseModel):
         return s_status
 
     def add_variable(self, name, id_=0):
-        """add SAT variable to model
+        """
+        Add SAT variable to model
         return existing variable if already added
-        
+
         if a specific id is wanted : will give this id to the variable
+
+        :param name: string value for the name of the variable
+        :param id_: integer value for the id that will
+                    be used for the variable
+        :return: the variable instance just created
         """
         check_instance(fct_name='add_variable', value=name,
                        name='name', type_=str)
@@ -117,16 +129,25 @@ class SATModel(BaseModel):
         return new_var
 
     def add_constraint_expr(self, expr):
-        """add constraint to model,
-        all constraint are implicitly connected via AND operator"""
+        """
+        add constraint to model,
+        all constraint are implicitly connected via AND operator
+
+        :param expr: expression to add (type Expr())
+        """
         check_instance(fct_name='add_constraint_expr',
                        value=expr, name='expr', type_=Expr)
 
         self.__constraints.append(expr)
 
     def add_constraint_vector(self, lst):
-        """add a constraint using a vector format [1,-2,3]
-        do nothing if lst is empty (not lst   return False if empty)"""
+        """
+        add a constraint using a vector format [1,-2,3]
+        do nothing if lst is empty (not lst   return False if empty)
+
+        :param lst: a list of integers as a constraint
+                integers must be different from 0
+        """
         if not lst:
             return
 
@@ -141,8 +162,12 @@ class SATModel(BaseModel):
         self.add_constraint_expr(reduce(OR, iter_vars))
 
     def add_list_constraints(self, lst_constraints):
-        """add a list of constraint
-        constraint can be vectors or Expr
+        """
+        add a list of constraint
+        using either add_constraint_expr or
+                    add_constraint_vector
+
+        :param lst_constraints: a list of Expr() or lists
         """
         check_instance(fct_name="add_list_constraints", value=lst_constraints,
                        name="lst_constraints", type_=list)
@@ -157,6 +182,12 @@ class SATModel(BaseModel):
                                type_=(list, Expr))
 
     def build_from_file(self, file_path):
+        """
+        Builds the model using an existing SAT problem
+        written in the cnf format
+
+        :param file_path: string value of the path to the file
+        """
         check_instance(fct_name="build_from_file", value=file_path,
                        name="file_path", type_=str)
         if not file_path.endswith(".cnf"):
@@ -176,27 +207,44 @@ class SATModel(BaseModel):
 
         lst_rws = pb_txt.split('\n')
 
-        first_rw = _get_first_rw(lst_rws, file_path)
-        lst_lst = [_from_line_to_rw(line, file_path)
+        first_rw = __get_first_rw(lst_rws, file_path)
+        lst_lst = [__from_line_to_rw(line, file_path)
                    for line in lst_rws[first_rw:]
                    if len(line.replace(" ", "")) > 0]
 
         self.add_list_constraints(lst_lst)
 
     def get_variable_with_id(self, id_):
-        """return the variable with the integer id of the variable"""
+        """
+        return the variable with the integer id of the variable
+
+        :param id_: the integer id of the variable
+                (having been set while creating the variable)
+        :return: Var() instance of the asked variable
+        """
         check_instance(fct_name='get_variable_with_id', value=id_,
                        name='id_', type_=int)
         return self.__variables[abs(id_)]
 
     def get_variable_with_name(self, name):
-        """return the variable with the str name of the variable"""
+        """
+        return the variable with the string name of the variable
+
+        :param name: the string name of the variable
+                (having been set while creating the variable)
+        :return: Var() instance of the asked variable
+        """
         check_instance(fct_name='get_variable_with_name', value=name,
                        name='name', type_=str)
         return self.__variables_name[name]
 
     def remove_constraint_with_index(self, index):
-        """remove one constraint with the index"""
+        """
+        remove one constraint with the index
+
+        :param index: integer value of the index of
+                the constraint in the list
+        """
         check_instance(fct_name="remove_constraint_with_index",
                        value=index, name='index', type_=int)
         try:
@@ -208,8 +256,14 @@ class SATModel(BaseModel):
                                       " constraints."]))
 
     def __get_var(self, id_):
-        """return the right variable even if the id is negative
+        """
+        return the right variable even if the id is negative
         set it negative if wanted
+
+        :param id_: the integer id of the variable
+                (having been set while creating the variable)
+        :return: plus or minus the Var() instance
+                of the asked variable
         """
         if id_ < 0:
             return - self.__variables[abs(id_)]
@@ -217,16 +271,25 @@ class SATModel(BaseModel):
             return self.__variables[id_]
     
     def __add_id(self, id_):
-        """manage negative IDs
+        """
+        manage negative IDs
         add new variable only if not already used
+
+        :param id_: the integer id of the variable
+                (having been set while creating the variable)
+        :return: the variable instance just created
         """
         a_id = abs(id_)
         if a_id not in self.__variables.keys():
             return self.add_variable("x" + str(a_id), a_id)
 
     def __get_new_id(self, id_=0):
-        """if specific id not requested, will take the smallest one not taken
+        """
+        if specific id not requested, will take the smallest one not taken
         Does not rely on te number of variables anymore
+
+        :param id_: requested integer for the id of the new variable
+        :return:
         """
         if id_ == 0:
             new_id = 1
@@ -244,7 +307,9 @@ class SATModel(BaseModel):
 
     @property
     def var_results(self):
-        """return a dictionary of the variables {'var_id':value}"""
+        """
+        :return: dictionary of the variables {'var_id':value}
+        """
         def make_tuple(var): return tuple([var.id, var.value])
 
         iter_tuples = map(make_tuple, self.__lst_variables)
@@ -252,7 +317,9 @@ class SATModel(BaseModel):
 
     @property
     def var_name_results(self):
-        """return a dictionary of the variables {'var_name':value}"""
+        """
+        :return: dictionary of the variables {'var_name':value}
+        """
 
         def make_tuple(var): return tuple([var.name, var.value])
 
@@ -267,6 +334,10 @@ class SATModel(BaseModel):
         print("\n".join(lst_lines))
 
     def build_str_model(self):
+        """
+        Builds the str file of the problem, written in the cnf format
+        :return: returns the str value of the text
+        """
         clauses = (constr.convert_to_cnf().content for constr in self.__constraints)
         clauses = [clause for x in clauses for clause in x]
         filestr = "p cnf {} {}\n".format(len(self.__variables), len(clauses))
@@ -356,9 +427,9 @@ class ListExpr(Expr):
     """a dummy expr class for expression which can contain multiple expressions"""
     def __init__(self, *content):
         self._content = []
-        self._add_other(*content)
+        self.__add_other(*content)
 
-    def _add_other(self, *content):
+    def __add_other(self, *content):
         for expr in content:
             if isinstance(expr, self.__class__):
                 self._content += expr.content
@@ -517,7 +588,7 @@ class Var(Expr):
         self.__value = value
 
 
-def _get_first_rw(lst_rws, path):
+def __get_first_rw(lst_rws, path):
     rw_cnt, max_lst = (0, len(lst_rws))
     while not lst_rws[rw_cnt].startswith("p cnf "):
         rw_cnt += 1
@@ -529,7 +600,7 @@ def _get_first_rw(lst_rws, path):
     return rw_cnt + 1
 
 
-def _from_line_to_rw(line, path):
+def __from_line_to_rw(line, path):
     l = []
     for i in line.split(" ")[:-1]:
         try:

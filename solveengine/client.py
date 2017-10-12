@@ -18,8 +18,9 @@ from .helper import _get_logger, unusual_answer, SERequests, build_err_msg, ObjR
 LOGGER = _get_logger()
 
 
-class BaseConnection():
-    """MIPModel class
+class BaseClient():
+    """
+    MIPModel class
 
         Create an instance to help connection with SE
 
@@ -29,10 +30,26 @@ class BaseConnection():
                     is finished solving the problem
     """
     def __init__(self, model, sleep_time):
+        """
+        Initialises a base instance of client
+        :param model: the model instance of the problem to solve
+        :param sleep_time: the double value to indicate the time
+                    to wait between 2 status requests
+        """
         self.model = model
         self.sleep_time = sleep_time
+        self.job_id = ""
 
     def manage_solving(self):
+        """
+        Go Through all the steps for solving a problem
+
+        :return:
+            job_id: the id of the solved job,
+                returned because must be updated into the job class
+            se_status: the status of the job (interupted/completed/failed/ etc.
+
+        """
         self._create_job()
         self._schedule_job()
         se_status = self._wait_results()
@@ -41,11 +58,20 @@ class BaseConnection():
         return self._id, se_status, result
 
 
-class GrpcConnection(BaseConnection):
+class GrpcClient(BaseClient):
     def __init__(self, model, token, sleep_time):
-        """initiate the connection class for grpc"""
-        super(GrpcConnection, self).__init__(model=model,
-                                             sleep_time=sleep_time)
+        """
+        Init the http kind of client
+
+        :param model: the instance of the problem
+        :param token: the string file of the api-key needed to
+                    recognize the user
+        :param sleep_time: the double value to indicate the time
+                    to wait between 2 status requests
+        :update _grpc_metadata, _solve_engine
+        """
+        super(GrpcClient, self).__init__(model=model,
+                                         sleep_time=sleep_time)
         self._prepare_grpc()
         self.__grpc_metadata = [("authorization", "".join(["api-key ", token]))]
 
@@ -56,8 +82,12 @@ class GrpcConnection(BaseConnection):
         self._solve_engine = JobStub(channel)
 
     def _create_job(self):
-        """create a job by sending the problem to Solveengine
+        """
+        create a job by sending the problem to Solveengine
         return the id of the 'job' created in the solve engine network
+
+        :updates:
+            updates client._id
         """
         LOGGER.debug("Creating Solve Engine job...")
         pb_data = self.model.build_str_model().encode('ascii')
@@ -77,32 +107,47 @@ class GrpcConnection(BaseConnection):
         LOGGER.debug("Job created {}".format(self._id))
 
     def _schedule_job(self):
-        """launch the resolution of the job just created"""
+        """
+        launches the resolution of the job just created
+        """
         LOGGER.debug("Scheduling Solve Engine job...")
 
         try:
             self._solve_engine.Schedule(JobRequest(id=self._id),
-                                    metadata=self.__grpc_metadata)
+                                        metadata=self.__grpc_metadata)
         except grpc.RpcError as err:
             raise grpc.RpcError(err.details())
 
         LOGGER.debug("Job scheduled")
 
+    def _get_status(self):
+        """
+        asks for the status of the job
+        :return: the string value for the job status
+        """
+        try:
+            resp_obj = self._solve_engine.Status(JobRequest(id=self._id),
+                                                 metadata=self.__grpc_metadata)
+        except grpc.RpcError as err:
+            raise grpc.RpcError(err.details())
+
+        if unusual_answer(resp_obj, SERequests.GET_STATUS):
+            raise ValueError(build_err_msg(resp_obj))
+
+        return resp_obj.status
+
     def _wait_results(self):
-        """asks for the status of the solving until it finishes"""
+        """
+        asks for the status of the solving until it finishes
+
+        :return:
+            status: string file describing the status of the job
+        """
         sec_cnt = 0
         while True:
-            try:
-                resp_obj = self._solve_engine.Status(JobRequest(id=self._id),
-                                                 metadata=self.__grpc_metadata)
-            except grpc.RpcError as err:
-                raise grpc.RpcError(err.details())
 
-            if unusual_answer(resp_obj, SERequests.GET_STATUS):
-                raise ValueError(build_err_msg(resp_obj))
+            se_status = self._wait_results()
 
-            se_status = resp_obj.status
-            
             msg = "".join(["Solving the problem, status : ", se_status,
                            " - waiting time : ", str(sec_cnt), "s"])
             LOGGER.debug(msg)
@@ -118,18 +163,24 @@ class GrpcConnection(BaseConnection):
                                           " has been reached before solving the problem"]))
             elif se_status == SEStatusCode.STOPPED:
                 raise ValueError("Error with Solve engine : the job has been manually cancelled")
-            
+
             time.sleep(self.sleep_time)
             sec_cnt += 1
         return se_status
 
     def _get_solution(self):
-        """asks Solveengine the results of the problem"""
+        """
+        asks Solveengine the results of the problem
+
+        :return:
+        result: an instance containing the solution of the problem
+            (objective value, variables, status)
+        """
         LOGGER.debug("Getting results...")
         
         try:
             resp_obj = self._solve_engine.GetResults(JobRequest(id=self._id),
-                                                 metadata=self.__grpc_metadata)
+                                                     metadata=self.__grpc_metadata)
         except grpc.RpcError as err:
             raise grpc.RpcError(err.details())
 
@@ -144,15 +195,28 @@ class GrpcConnection(BaseConnection):
         return result
 
 
-class HttpConnection(BaseConnection):
+class HttpClient(BaseClient):
     def __init__(self, model, token, sleep_time):
-        super(HttpConnection, self).__init__(model=model,
-                                             sleep_time=sleep_time)
+        """
+        Init the http kind of client
+
+        :param model: the instance of the problem
+        :param token: the string file of the api-key needed to
+                    recognize the user
+        :param sleep_time: the double value to indicate the time
+                    to wait between 2 status requests
+        """
+        super(HttpClient, self).__init__(model=model,
+                                         sleep_time=sleep_time)
         self.__headers = {"Authorization": "api-key {}".format(token)}
     
     def _create_job(self):
-        """create a job by sending the problem to Solveengine
+        """
+        create a job by sending the problem to Solveengine
         return the id of the 'job' created in the solve engine network
+
+        :updates:
+            updates client._id
         """
         LOGGER.debug("Creating Solve Engine job...")
         pb_data = self.model.build_str_model().encode('ascii')
@@ -170,7 +234,9 @@ class HttpConnection(BaseConnection):
         LOGGER.debug("Job created {}".format(self._id))
 
     def _schedule_job(self):
-        """launch the resolution of the job just created"""
+        """
+        launches the resolution of the job just created
+        """
         LOGGER.debug("Scheduling Solve Engine job...")
 
         resp = self._send("post", SEUrls.SCHEDULE_URL)
@@ -181,16 +247,28 @@ class HttpConnection(BaseConnection):
 
         LOGGER.debug("Job scheduled")
 
+    def _get_status(self):
+        """
+        asks for the status of the job
+        :return: the string value for the job status
+        """
+        resp = self._send("get", SEUrls.STATUS_URL)
+
+        solution = ObjResponse(resp, SERequests.GET_STATUS)
+        if solution.unusual_answer:
+            raise ValueError(solution.build_err_msg)
+        return solution.job_status
+
     def _wait_results(self):
-        """asks for the status of the solving untill it finishes"""
+        """
+        asks for the status of the solving until it finishes
+
+        :return:
+            status: string file describing the status of the job
+        """
         sec_cnt = 0
         while True:
-            resp = self._send("get", SEUrls.STATUS_URL)
-
-            solution = ObjResponse(resp, SERequests.GET_STATUS)
-            if solution.unusual_answer:
-                raise ValueError(solution.build_err_msg)
-            se_status = solution.job_status
+            se_status = self._get_status()
             
             msg = "".join(["Solving the problem, status : ", se_status,
                            " - waiting time : ", str(sec_cnt), "s"])
@@ -213,7 +291,13 @@ class HttpConnection(BaseConnection):
         return se_status
 
     def _get_solution(self):
-        """asks Solveengine the results of the problem"""
+        """
+        asks Solveengine the results of the problem
+
+        :return:
+        result: an instance containing the solution of the problem
+            (objective value, variables, status)
+        """
         LOGGER.debug("Getting results...")
         
         resp = self._send("get", SEUrls.RESULTS_URL)
@@ -228,7 +312,18 @@ class HttpConnection(BaseConnection):
         return result
     
     def _send(self, msgtype="post", path=None, with_job_id=True, **kwargs):
-        """send an http request to solveengine"""
+        """
+        send an http request to solveengine
+
+        :param msgtype: string type, post/get/etc.
+        :param path: what must complete the base url
+        :param with_job_id: true if we should add the job_id in the url
+        :param kwargs: args for the requests function.
+            Here must a json additional string file
+        :return:
+            return the instance returned from the request
+            built from a json format
+        """
         url = "".join([SE_URL_HTTP,
                        "".join([self._id, "/"]) if with_job_id else "",
                        str(path) if path else ""])
