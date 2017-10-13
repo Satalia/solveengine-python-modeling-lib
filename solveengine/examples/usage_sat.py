@@ -1,7 +1,7 @@
 """
 This file presents how to create a SATModel, add variables, add constraints and solve the model using the SolveEngine python interface
 """
-from solveengine import SATModel, SEStatusCode, SolverStatusCode
+from pysolveengine import SATModel, SEStatusCode, SolverStatusCode
 
 ######################################
 # create SAT model

@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Aug  4 13:04:57 2017
-
-@author: w848
-"""
 import grpc
 import time
 import base64 as b64

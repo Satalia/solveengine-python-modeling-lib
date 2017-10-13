@@ -85,7 +85,7 @@ Python library for Solve Engine
 ### **MIP Example**
 This file presents how to create a MIPModel, add variables, add constraints and solve the model using the SolveEngine python interface
 ```
-from solveengine import MIPModel, INF, Direction, SEStatusCode, SolverStatusCode
+from pysolveengine import MIPModel, INF, Direction, SEStatusCode, SolverStatusCode
 ```
 > #### **Create MIP model**
 
@@ -300,7 +300,7 @@ if model.se_status in [SEStatusCode.TIMEOUT]:
 ### **SAT Example**
 This file presents how to create a SATModel, add variables, add constraints and solve the model using the SolveEngine python interface
 ```
-from solveengine import SATModel, SEStatusCode, SolverStatusCode
+from pysolveengine import SATModel, SEStatusCode, SolverStatusCode
 ```
 > #### **Create SAT model**
 > - *The token (personnal key that can be found at solve.satalia.com*
