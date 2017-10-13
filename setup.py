@@ -10,7 +10,6 @@ setup(
     name='SolveEngine',
     version='0.3',
     author="Karsten Lehmann",
-    install_requires=open("requirements.txt", "r").read().split("\n"),
     author_email="karsten@satalia.com",
     description="A library to model MILP/SAT problems and have them solved via the SolveEngine using the web API",
     keywords="SolveEngine MIP SAT Optimization",
