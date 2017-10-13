@@ -2,7 +2,7 @@
 ===========
 Python library for Solve Engine
 
-### <i class="icon-download"></i> **HOW INSTALL THE LIBRARY **
+### <i class="icon-download"></i> **HOW TO INSTALL THE LIBRARY **
 
 > **Using pip**
 > 
