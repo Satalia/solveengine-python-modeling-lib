@@ -6,6 +6,7 @@ import logging
 
 LOGGER_NAME = "satalia_solve_engine_logger"
 
+
 class SERequests(Enum):
     """enum to determinate the kind of request that has been sent,
     used to analyse the result from a request
@@ -16,8 +17,10 @@ class SERequests(Enum):
     GET_STATUS = 4
     GET_RESULT = 5
 
+
 def _get_logger():
     return logging.getLogger(LOGGER_NAME)
+
 
 class StrEnum(Enum):
     """An enum which allows for comparison with a string"""
@@ -38,6 +41,7 @@ class StrEnum(Enum):
                 values.append(str(getattr(cls, var_name)))
         return values
 
+
 class ResponseJob():
     """class representing the data returned from a request
     concerning a job
@@ -45,13 +49,14 @@ class ResponseJob():
     def __init__(self, json_obj):
         self.status = json_obj['status']
         self.userId = json_obj['user_id']
-        self.jobId= json_obj['id']
+        self.jobId = json_obj['id']
         self.algorithm = json_obj['algorithm']
         self.submitted = json_obj['submitted']
         self.started = json_obj.get('started', 'did not start')
         self.finish = json_obj['finished']
         self.fileName = json_obj['filenames']
         self.usedTime = json_obj['used_time']
+
 
 class Variable():
     """ class representing a variable 
@@ -60,6 +65,7 @@ class Variable():
     def __init__(self, name, value):
         self.name = name
         self.value = value
+
 
 class ObjResponse():
     """class created to test and gether the data returned by the http request
@@ -107,6 +113,7 @@ class ObjResponse():
     def build_err_msg(self):
         return "Error type : " + str(self.code) + "\nMessage returned by the server : " + self.message
 
+
 def unusual_answer(resp_obj, resp_type):
     """tests the values the object from grpc requests should return
     
@@ -131,22 +138,30 @@ def unusual_answer(resp_obj, resp_type):
     except:
         return True
 
+
 def build_err_msg(resp_obj):
     """returns an error message with what is written in 
     the error message returned by solve engine
     """
     return "Error type : " + str(resp_obj.code) + "\nMessage returned by the server : " + resp_obj.message
-    
-def check_complete_list(list_, nbMax, defValue):
-    """make sure the list is long enough
-    
-    complete with default value if not
-    
-    return False if the list is too long
-    """
-    
-    if len(list_) <= nbMax: 
-        list_.extend([defValue] * (nbMax - len(list_)))
-        return True
+
+
+def check_instance(fct_name, value, name, type_):
+    """check the type of the value,
+    return an error with a build message if not the type asked"""
+    if type(type_) == tuple:
+        str_type = " or ".join(list(map(str, type_)))
     else:
-        return False
+        str_type = str(type_)
+
+    if not isinstance(value, type_):
+        f_line = "".join(["Could not ", fct_name, ", ",
+                          name, " must be a ", str_type])
+        s_line = "".join(["Here is the type sent : ",
+                          str(type(value))])
+        t_line = "Here is the value sent :"
+        raise ValueError("\n".join([f_line,
+                                    s_line,
+                                    t_line, str(value)]))
+    else:
+        pass

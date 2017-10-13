@@ -1,22 +1,22 @@
 """
 This file presents how to create a MIPModel, add variables, add constraints and solve the model using the SolveEngine python interface
 """
-from solveengine import MIPModel, VarType, INF, Direction, SEStatusCode, SolverStatusCode
+from solveengine import MIPModel, INF, Direction, SEStatusCode, SolverStatusCode
 
 ######################################
 # create MIP model
 #
 # the token
-token = "2prMEegqCAFB5eqmfuXmGufyJ+PcMzJbZaQcvqrhtx4="
-staticmethod
+token = "2prMEegqCAFB5eqmfuXmGufyJ+PcMzJbZaQcvqrhtxg="
+
 # the name of the file being used when uploading the problem file
 # (to be able to find the file in the webinterface of the SolveEngine easier)
 # default: model
-filename = "special_model"
+model_name = "special_model"
 
 # the time (in seconds) the model class waits before checking the server if the result is ready
 # the smaller the number the shorter the intervals
-sleeptime = 3
+sleep_time = 3
 
 # with/without debug printout
 # this does not print debug information for the solvers
@@ -29,7 +29,7 @@ interactive_mode = True
 #if http connections desired set it to True
 http_mode = False
 
-model = MIPModel(token, filename=filename, sleeptime=sleeptime,
+model = MIPModel(token, model_name=model_name, sleep_time=sleep_time,
                  debug=debug, interactive_mode=interactive_mode,
                  http_mode=http_mode)
 
@@ -48,22 +48,25 @@ model.set_direction(Direction.MINIMIZE)
 # lb=-INF
 # ub=INF
 
-# two ways to create a binary variable
+# binary variable
 x1 = model.add_binary_var(name="x1")
-x2 = model.add_var("x2", lb=0, ub=1, vartype=VarType.INTEGER)
+x2 = model.add_binary_var("x2")
 
-# two ways to create an integer variable
+# integer variable
 # note that for y1, ub=INF is set by default
 y1 = model.add_integer_var(name="y1", lb=-13)
-y2 = model.add_var(name="y2", lb=-13, ub=INF, vartype=VarType.INTEGER)
+y2 = model.add_integer_var(name="y2", lb=-13, ub=INF)
 
-# two ways to create a continuous variable
+# continuous variable
 # note that for z2, lb=-INF is set by default
-z2 = model.add_continious_var("z2", ub=23)
-z3 = model.add_var("z3", lb=-INF, ub=23, vartype=VarType.CONTINIOUS)
+z2 = model.add_continuous_var("z2", ub=23)
+z3 = model.add_continuous_var("z3", lb=-INF, ub=23)
 
 # example of a continuous variable with lb=-INF, ub=INF
-z1 = model.add_continious_var("z1")
+z1 = model.add_continuous_var("z1")
+
+# if a variable you added is lost, you can get it back with get_variable()
+z1 = model.get_variable("z1")
 
 # change / print bounds
 z1.lb = 12
@@ -137,13 +140,20 @@ import numpy as np
 #
 #objective function
 f = [-2,1,3]
+#or
+f = np.array([-2, 1, 3])
 
 #inequality constraints coefficients : left and right sides
-A = np.array([[2,3,1], [-1,0,4]])
-b = [1,0]
+A = np.array([[2, 3, 1], [-1, 0, 4]])
+#or
+A = [[2, 3, 1], [-1, 0, 4]]
+
+b = [1, 0]
 
 #[equality constraints coefficients : left and right sides]
-Aeq = np.array([[1,5]])
+Aeq = np.array([[1, 5, 0]])
+#or
+Aeq = [[1, 5, 0]]
 beq = [-2.5]
 
 #[lower and upper bounds]
@@ -152,8 +162,11 @@ ub = [5, 10, INF]
 
 #[list of integer/binary variables, 1 for integer/binary]
 #In case of conflict with bounds, binary has priority
-int_list = [0,0,1]
-bin_list = [1,0,0]
+int_list = [0, 0, 1]
+bin_list = [1, 0, 0]
+
+# these inputs can as well be classes that return something with respectively [i][j] and [i]
+# all the values inside must be called in float()
 
 ######################################
 #Reset the model and set it using these matrices
@@ -164,10 +177,14 @@ model.build_with_matrices(f, A, b,
 ######################################
 # check the model
 #
-print(model.get_file_str())
-print(model.constraints)
-print(model.filename)
-model.update_filename("new_name")
+print(model.build_str_model())
+print(model.file_name)
+
+# You can know the index for each constraint by printing them
+model.print_constraints()
+# You can remove constraint knowing its index
+model.remove_constraint_with_index(index=-1)
+
 
 # solving the model
 #
@@ -200,12 +217,12 @@ if model.se_status == SEStatusCode.COMPLETED:
         print("z2=", z2.value)
         print("z3=", z3.value)
         
-        #print variables values
+        #or
         for key, value in model.variables:
             print(key, "=", value)
             
         #print summary
-        model.print_result()
+        model.print_results()
 
     # status codes without solution
     if model.solver_status in [SolverStatusCode.INFEASIBLE,

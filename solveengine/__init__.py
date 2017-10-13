@@ -13,6 +13,7 @@ def _create_logger():
     logger.addHandler(handler)
 _create_logger()
 
-from .mipmodel import MIPModel, INF, VarType, Direction
+from .mipmodel import MIPModel, INF, Direction
 from .satmodel import SATModel
-from .basemodel import SEStatusCode, SolverStatusCode
+from .config import SEStatusCode, SolverStatusCode, help_sat, help_mip
+

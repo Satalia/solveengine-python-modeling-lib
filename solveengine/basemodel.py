@@ -6,11 +6,12 @@ from collections import namedtuple
 import logging
 from sys import stdout
 
-from .connection import GrpcConnection, HttpConnection
-from .helper import _get_logger
+from .client import GrpcClient, HttpClient
+from .helper import _get_logger, check_instance
 from .config import SolverStatusCode, SEStatusCode
 
 LOGGER = _get_logger()
+
 
 class BaseModel(object):
     """BaseModel class
@@ -21,43 +22,52 @@ class BaseModel(object):
     token: the SolveEngine token provided by the website, also called "api_key"
     this is necessary to connect to the solver
 
-    filename: the filename that the uploaded file should have,
+    file_name: the file_name that the uploaded file should have,
     default is model.lp, must end with .lp
 
     id: job id provided by Solve Engine when sending a new problem
     
-    sleeptime: the time we should sleep between checks if the SolveEngine
-    is finished solving the problem
+    options : contain :
+        sleep_time: the time we should sleep between checks if the SolveEngine
+                    is finished solving the problem
+        debug(boolean): active the debug output
 
-    debug(boolean): active the debug output
+    __solver_status: status of the solution returned by SE
+    __se_status: current status of the solving processus
     """
-    OPTIONS = namedtuple("Options", 'sleeptime debug')
+    OPTIONS = namedtuple("Options", 'sleep_time debug')
 
-    def __init__(self, token, filename="model", sleeptime=2, debug=False, 
+    def __init__(self, token, file_name, sleep_time=2, debug=False,
                  file_ending=".lp", interactive_mode=False, http_mode=False):
         if debug:
             LOGGER.setLevel(logging.DEBUG)
         if file_ending not in [".lp", ".cnf"]:
-            raise ValueError("Filetype {} not supported".format(file_ending))
-        self._file_ending = file_ending
-        self._filename = filename + file_ending
-        self._token = token
-        self._id = None
-        self._options = BaseModel.OPTIONS(sleeptime, debug)
-        self._solver_status = str(SolverStatusCode.NOTSTARTED)
-        self._se_status = str(SEStatusCode.NOTSTARTED)
-        
+            raise ValueError("File type {} not supported".format(file_ending))
+
+        _check_init(token, sleep_time,
+                    debug, interactive_mode,
+                    http_mode)
+
+        self.__file_name = file_name
+        self.__token = token
+        self.__id = None
+        self.__options = BaseModel.OPTIONS(sleep_time, debug)
+        self.__solver_status = str(SolverStatusCode.NOTSTARTED)
+        self.__se_status = str(SEStatusCode.NOTSTARTED)
+
         self.interactive = interactive_mode
         self.use_http = http_mode
         
         if self.use_http:
-            self.connection = HttpConnection()
+            self.client = HttpClient(self, self.__token,
+                                             self.__options.sleep_time)
         else:
-            self.connection = GrpcConnection(self._token)
-            
-        LOGGER.debug("creating model with filename= " + self._filename)
+            self.client = GrpcClient(self, self.__token,
+                                             self.__options.sleep_time)
 
-    def _get_file_str(self):
+        LOGGER.debug("creating model with file_name= " + self.__file_name)
+
+    def build_str_model(self):
         raise NotImplementedError()
 
     def _process_solution(self, result):
@@ -76,45 +86,67 @@ class BaseModel(object):
         Error: if there is a connection problem
         """
 
-        self._id, self._se_status, result = self.connection.manage_solving(self)
-        self._process_solution(result)
-        LOGGER.debug("Results obtained : {}".format(self._solver_status))    
+        self.__id, self.__se_status, result = self.client.manage_solving()
+        self.__solver_status = self._process_solution(result)
+        LOGGER.debug("Results obtained : {}".format(self.solver_status))
 
-        self.print_if_interactive("Solving done : {}".format(self._solver_status))
+        self.print_if_interactive("Solving done : {}".format(self.solver_status))
+        if self.interactive:
+            stdout.write("\n")
 
     @property
     def solver_status(self):
         """get the status the solver reported of the result"""
-        return self._solver_status
+        return self.__solver_status
     
     @property
     def job_id(self):
         """ get the ID of the job sent to Solve Engine"""
-        return self._id
+        return self.__id
     
     @property
     def se_status(self):
         """get the job status the solver reported while solving"""
-        return self._se_status
+        return self.__se_status
     
     @property
-    def filename(self):
+    def file_name(self):
         """get the name chosen for the file"""
-        return self._filename
-    
-    def update_filename(self, name):
-        """update the name of the file that will be sent to solveengine
-        after adding the file ending in case
-        """
-        if not name.endswith(self._file_ending):
-            name = "".join([name, self._file_ending])
-        self._filename = name
-    
-    def print_problem(self):
-        """ print the entire problem in the asked format"""
-        print(self.get_file_str())
+        return self.__file_name
 
     def print_if_interactive(self, msg):
         """print a line replacing the current one only if mode interactive asked"""
         if self.interactive:
             stdout.write("".join(["\r", msg, " " * 20]))
+
+
+def _check_init(token, sleep_time,
+                debug, interactive_mode,
+                http_mode):
+    """
+    Check that all the initialising input suit the model
+
+    :param token: string value of the id needed
+            from SolveEngine to identify the user
+    :param sleep_time: double value of the time
+            requested by the user between two
+            status requests of the job
+    :param debug: boolean value, True if the
+            user doesn't want debug messages to be displayed
+    :param interactive_mode: boolean, True if the
+            user wants solving status messages to be displayed
+    :param http_mode: boolean, True if the user
+            wants the requests to follow http methods,
+            instead it will use GRPC
+    :return:
+    """
+    check_instance(fct_name="init model", value=token,
+                   name="token", type_=str)
+    check_instance(fct_name="init model", value=sleep_time,
+                   name="sleep_time", type_=(int, float))
+    check_instance(fct_name="init model", value=debug,
+                   name="debug", type_=bool)
+    check_instance(fct_name="init model", value=interactive_mode,
+                   name="interactive_mode", type_=bool)
+    check_instance(fct_name="init model", value=http_mode,
+                   name="http_mode", type_=bool)
