@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Setup for the Solver-Engine
+Setup for the Solve-Engine
 """
 
 #from distutils.core import setup
 from setuptools import setup
 
 setup(
-    name='SolveEngine',
+    name='pySolveEngine',
     version='0.3',
     author="Karsten Lehmann",
     author_email="karsten@satalia.com",

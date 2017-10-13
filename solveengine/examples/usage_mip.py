@@ -1,7 +1,7 @@
 """
 This file presents how to create a MIPModel, add variables, add constraints and solve the model using the SolveEngine python interface
 """
-from solveengine import MIPModel, INF, Direction, SEStatusCode, SolverStatusCode
+from pysolveengine import MIPModel, INF, Direction, SEStatusCode, SolverStatusCode
 
 ######################################
 # create MIP model
