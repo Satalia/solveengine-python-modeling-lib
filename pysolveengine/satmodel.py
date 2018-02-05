@@ -7,7 +7,6 @@ models via the Solve-Engine.
 """
 
 import itertools
-from numpy import ndarray
 from functools import reduce
 from os.path import isfile
 

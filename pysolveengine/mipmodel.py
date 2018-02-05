@@ -8,7 +8,6 @@ models via the Solve-Engine.
 
 from enum import Enum
 from collections import namedtuple
-from numpy import ndarray
 
 from .helper import StrEnum, _get_logger, check_instance
 
