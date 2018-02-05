@@ -312,6 +312,8 @@ class MIPModel(BaseModel):
         bin_list = list() if bin_list is None else bin_list
 
         _check_matrices(f, A, b, Aeq, beq, lb, ub, int_list, bin_list)
+
+        self.reinit()
         self.__build_variables_matrices(len(f), lb, ub, int_list, bin_list)
         self.__build_objective_matrices(f)
         self.__build_constraints_matrices(A, b, Aeq, beq)
@@ -331,7 +333,6 @@ class MIPModel(BaseModel):
 
         :updates: model.__variables
         """
-        self.__variables = dict()
         lst_tuples = _build_name_index_tuples(self.DEFAULT_VAR_NAME, nb_vars)
         for index, var_name in lst_tuples:
             if bin_list[index]:
@@ -358,7 +359,6 @@ class MIPModel(BaseModel):
         :param A, Aeq: a matrix-like, bi-dimensional instance made of doubles
         :param b, beq: a list-like, uni-dimensional instance made of doubles
         """
-        self.__constraints = []
         self.__add_constraints_matrices(A, b, boo_equ=False)
         if Aeq is not None:
             self.__add_constraints_matrices(Aeq, beq, boo_equ=True)
@@ -444,13 +444,13 @@ class MIPModel(BaseModel):
             from Solveengine after solving the problem
         :return: s_status: the status of the job of solving
         """
-        self.__obj = self.__obj._replace(value=result_obj.objective_value)
-        s_status = result_obj.status
+        self.__obj = str(self.__obj._replace(value=result_obj.objective_value))
+        s_status = str(result_obj.status)
         if s_status not in SolverStatusCode.get_values():
             raise ValueError("solver status unknown:", self.solver_status)
 
         for var in result_obj.variables:
-            self.__variables[var.name].set_value(var.value)
+            self.__variables[str(var.name)].set_value(var.value)
         return s_status
 
     def print_results(self):
