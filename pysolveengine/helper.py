@@ -101,7 +101,7 @@ class ObjResponse():
                 lst_dct_vars = dct_result.get('variables', [])
 
                 for dct_var in lst_dct_vars:
-                    self.variables.append(Variable(str(dct_var['name']), str(dct_var['value'])))
+                    self.variables.append(Variable(str(dct_var['name']), float(dct_var['value'])))
                     
             self.unusual_answer = False
             

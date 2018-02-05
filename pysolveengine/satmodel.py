@@ -105,7 +105,7 @@ class SATModel(BaseModel):
         for var in result_obj.variables:
             var_id = int(var.name)
             if var_id in self.__variables.keys():
-                self.__variables[var_id].set_value(True if var.value == 1 else False)
+                self.__variables[var_id].set_value(True if int(var.value) === 1 else False)
         return s_status
 
     def add_variable(self, name, id_=0):
