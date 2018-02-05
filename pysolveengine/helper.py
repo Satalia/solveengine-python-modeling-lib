@@ -82,33 +82,33 @@ class ObjResponse():
                 self.total_jobs = json_obj['total']
 
             elif resp_type == SERequests.CREATE_JOB:
-                self.job_id = json_obj['id']
+                self.job_id = str(json_obj['id'])
 
             elif resp_type == SERequests.SCHEDULE_JOB:
                 if len(json_obj.keys()) == 0:
                     pass
 
             elif resp_type == SERequests.GET_STATUS:
-                self.job_status = json_obj['status']
+                self.job_status = str(json_obj['status'])
 
             elif resp_type == SERequests.GET_RESULT:
                 self.variables = []
-                self.job_id = json_obj['job_id'] 
+                self.job_id = str(json_obj['job_id'])
                 dct_result = json_obj['result']
 
-                self.status = dct_result['status']
-                self.objective_value = dct_result.get('objective_value', 'no objective value')
+                self.status = str(dct_result['status'])
+                self.objective_value = str(dct_result.get('objective_value', 'no objective value'))
                 lst_dct_vars = dct_result.get('variables', [])
 
                 for dct_var in lst_dct_vars:
-                    self.variables.append(Variable(dct_var['name'], dct_var['value']))
+                    self.variables.append(Variable(str(dct_var['name']), str(dct_var['value'])))
                     
             self.unusual_answer = False
             
         except:
             self.unusual_answer = True
-            self.code = json_obj['code']
-            self.message = json_obj['message']
+            self.code = str(json_obj['code'])
+            self.message = str(json_obj['message'])
 
     def build_err_msg(self):
         return "Error type : " + str(self.code) + "\nMessage returned by the server : " + self.message
