@@ -153,7 +153,9 @@ if model.se_status == SEStatusCode.COMPLETED:
         print("the solver returned that the problem is unsatisfiable")
 
 # status codes for an unsuccessful run
-if model.se_status in [SEStatusCode.FAILED, SEStatusCode.STOPPED, SolverStatusCode.INTERRUPTED]:
+if model.se_status in [SEStatusCode.FAILED,
+                       SEStatusCode.STOPPED,
+                       SEStatusCode.INTERRUPTED]:
     print("something went wrong")
 if model.se_status in [SEStatusCode.TIMEOUT]:
     print("time limit has been reached")

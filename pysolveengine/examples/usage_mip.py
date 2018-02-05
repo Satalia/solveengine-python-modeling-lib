@@ -218,7 +218,7 @@ if model.se_status == SEStatusCode.COMPLETED:
         print("z3=", z3.value)
         
         #or
-        for key, value in model.variables:
+        for key, value in model.var_results:
             print(key, "=", value)
             
         #print summary
@@ -232,7 +232,7 @@ if model.se_status == SEStatusCode.COMPLETED:
 # status codes for an unsuccessful run
 if model.se_status in [SEStatusCode.FAILED,
                        SEStatusCode.STOPPED,
-                       SolverStatusCode.INTERRUPTED]:
+                       SEStatusCode.INTERRUPTED]:
     print("something went wrong")
 if model.se_status in [SEStatusCode.TIMEOUT]:
     print("time limit has been reached")
