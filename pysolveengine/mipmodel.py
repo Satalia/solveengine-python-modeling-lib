@@ -9,8 +9,7 @@ models via the Solve-Engine.
 from enum import Enum
 from collections import namedtuple
 
-from .helper import StrEnum, _get_logger, check_instance
-
+from .helper import StrEnum, _get_logger, check_instance, check_name
 from .basemodel import BaseModel, SolverStatusCode
 
 LOGGER = _get_logger()
@@ -151,6 +150,7 @@ class MIPModel(BaseModel):
         """add Variable to model"""
         check_instance(fct_name='add_var', value=name,
                        name='name', type_=str)
+        check_name(name=name, obj_type="variable")
 
         if name in self.__variables:
             raise ValueError("".join(["Variable ", name,
@@ -241,6 +241,8 @@ class MIPModel(BaseModel):
         if name is not None:
             check_instance(fct_name="add_constraint", value=name,
                            name='name', type_=str)
+            check_name(name=name, obj_type="constraint")
+
         constr.name = name or constr.name
         self.__constraints.append(constr)
 

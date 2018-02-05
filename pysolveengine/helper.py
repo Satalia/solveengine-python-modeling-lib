@@ -165,3 +165,17 @@ def check_instance(fct_name, value, name, type_):
                                     t_line, str(value)]))
     else:
         pass
+
+
+def check_name(name, obj_type):
+    """
+    For variables and constraints: if they contain ':', the solver will fail
+    :param name: name to check
+    :param obj_type: 'variable' or 'constraint'
+    :return: Nothing, will raise error if the name is incorrect
+    """
+    if name.find(":") > -1:
+        str_err = ''.join(["A ", obj_type, " name cannot contain ':'.\n",
+                           "You named '", name, "'\n",
+                           "Please change it and launch it again."])
+        raise ValueError(str_err)
