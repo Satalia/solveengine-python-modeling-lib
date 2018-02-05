@@ -444,7 +444,7 @@ class MIPModel(BaseModel):
             from Solveengine after solving the problem
         :return: s_status: the status of the job of solving
         """
-        self.__obj = str(self.__obj._replace(value=result_obj.objective_value))
+        self.__obj = self.__obj._replace(value=str(result_obj.objective_value))
         s_status = str(result_obj.status)
         if s_status not in SolverStatusCode.get_values():
             raise ValueError("solver status unknown:", self.solver_status)
