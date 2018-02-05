@@ -264,7 +264,7 @@ class HttpClient(BaseClient):
         solution = ObjResponse(resp, SERequests.GET_STATUS)
         if solution.unusual_answer:
             raise ValueError(solution.build_err_msg)
-        return solution.job_status
+        return str(solution.job_status)
 
     def _wait_results(self):
         """
