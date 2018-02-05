@@ -2,7 +2,7 @@
 import grpc
 
 import google.protobuf.empty_pb2 as google_dot_protobuf_dot_empty__pb2
-import solveengine.svc_jobs_pb2 as svc__jobs__pb2
+import pysolveengine.svc_jobs_pb2 as svc__jobs__pb2
 
 
 class JobStub(object):
