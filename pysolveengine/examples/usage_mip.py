@@ -185,6 +185,9 @@ model.print_constraints()
 # You can remove constraint knowing its index
 model.remove_constraint_with_index(index=-1)
 
+# At all time you can reinitialise the model's status/cosntraints/variables
+#
+model.reinit()
 
 # solving the model
 #

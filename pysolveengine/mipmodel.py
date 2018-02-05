@@ -146,6 +146,17 @@ class MIPModel(BaseModel):
         self.__constraints = []
         self.__obj = MIPModel.OBJECTIVE(Expr(), Direction.MINIMIZE, None)
 
+    def reinit(self):
+        """
+        Reinitialise the model characteristics that are not init parameters
+        :return: Nothing
+        """
+        self.__variables = dict()
+        self.__lst_variables = list()
+        self.__constraints = []
+        self.__obj = MIPModel.OBJECTIVE(Expr(), Direction.MINIMIZE, None)
+        super(MIPModel, self).reinit()
+
     def __add_var(self, name, lb=-INF, ub=INF, var_type=VarType.CONTINUOUS):
         """add Variable to model"""
         check_instance(fct_name='add_var', value=name,

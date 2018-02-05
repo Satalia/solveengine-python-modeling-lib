@@ -79,6 +79,17 @@ class SATModel(BaseModel):
         self.__lst_variables = list()
         self.__constraints = list()
 
+    def reinit(self):
+        """
+        Reinitialise the model characteristics that are not init parameters
+        :return: Nothing
+        """
+        self.__variables = dict()
+        self.__variables_name = dict()
+        self.__lst_variables = list()
+        self.__constraints = list()
+        super(SATModel, self).reinit()
+
     def _process_solution(self, result_obj):
         """
         process the results of the solver

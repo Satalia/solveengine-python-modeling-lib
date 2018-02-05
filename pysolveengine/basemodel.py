@@ -67,6 +67,15 @@ class BaseModel(object):
 
         LOGGER.debug("creating model with file_name= " + self.__file_name)
 
+    def reinit(self):
+        """
+        Reinitialise the model/job characteristics that are not init parameters
+        :return: Nothing
+        """
+        self.__id = None
+        self.__solver_status = str(SolverStatusCode.NOTSTARTED)
+        self.__se_status = str(SEStatusCode.NOTSTARTED)
+
     def build_str_model(self):
         raise NotImplementedError()
 
