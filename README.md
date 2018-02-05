@@ -24,6 +24,9 @@ Python library for Solve Engine
 > Download the folder directly from github, get the path for the file requirements.txt and use:
 >> pip install -r '/path/to/requirements.txt'
 
+> **Do not have grpc as python module installed**
+> Instead, install grpcio
+> SolveEngine will crash with grpc, given that this module is not complete and will mislead python
 
 ### **MAIN METHODS**
 > ####**Models** 
