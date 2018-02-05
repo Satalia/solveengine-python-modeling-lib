@@ -141,7 +141,7 @@ class GrpcClient(BaseClient):
         if unusual_answer(resp_obj, SERequests.GET_STATUS):
             raise ValueError(build_err_msg(resp_obj))
 
-        return resp_obj.status
+        return str(resp_obj.status)
 
     def _wait_results(self):
         """
