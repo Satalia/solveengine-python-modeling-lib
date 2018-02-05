@@ -13,7 +13,7 @@ from .helper import _get_logger, unusual_answer, SERequests, build_err_msg, ObjR
 LOGGER = _get_logger()
 
 
-class BaseClient():
+class BaseClient(object):
     """
     MIPModel class
 
