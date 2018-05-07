@@ -16,7 +16,7 @@ setup(
     packages=['pysolveengine', 'pysolveengine/examples'],
     license='',
     url='https://github.com/Satalia/solveengine-python-modeling-lib',
-    download_url='https://github.com/Satalia/solveengine-python-modeling-lib/archive/0.3.tar.gz',
+    download_url='https://github.com/Satalia/solveengine-python-modeling-lib/archive/1.0.0.tar.gz',
     install_requires=['beautifulsoup4>=4.6.0',
                       'certifi>=2017.7.27.1',
                       'chardet>=3.0.4',
