@@ -8,11 +8,11 @@ Python library for Solve Engine
  
  - From you console, call this :
 ```
-pip install solveengine
+pip install pysolveengine
 ```
  - Or for python3 users :
 ```
-pip3 install solveengine
+pip3 install pysolveengine
 ```
 
  **By directly downloading github repository** 
