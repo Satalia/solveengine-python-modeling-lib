@@ -13,7 +13,7 @@ from .helper import _get_logger, unusual_answer, SERequests, build_err_msg, ObjR
 LOGGER = _get_logger()
 
 
-class BaseClient():
+class BaseClient(object):
     """
     MIPModel class
 
@@ -34,6 +34,9 @@ class BaseClient():
         self.model = model
         self.sleep_time = sleep_time
         self.job_id = ""
+        self._job_created = False
+        self._job_scheduled = False
+        self._job_done = False
 
     def manage_solving(self):
         """
@@ -45,9 +48,18 @@ class BaseClient():
             se_status: the status of the job (interupted/completed/failed/ etc.
 
         """
-        self._create_job()
-        self._schedule_job()
-        se_status = self._wait_results()
+        if not self._job_created:
+            self._create_job()
+            self._job_created = True
+
+        if not self._job_scheduled:
+            self._schedule_job()
+            self._job_scheduled = True
+
+        if not self._job_done:
+            se_status = self._wait_results()
+            self._job_done = True
+
         result = self._get_solution()
 
         return self._id, se_status, result
@@ -129,7 +141,7 @@ class GrpcClient(BaseClient):
         if unusual_answer(resp_obj, SERequests.GET_STATUS):
             raise ValueError(build_err_msg(resp_obj))
 
-        return resp_obj.status
+        return str(resp_obj.status)
 
     def _wait_results(self):
         """
@@ -252,7 +264,7 @@ class HttpClient(BaseClient):
         solution = ObjResponse(resp, SERequests.GET_STATUS)
         if solution.unusual_answer:
             raise ValueError(solution.build_err_msg)
-        return solution.job_status
+        return str(solution.job_status)
 
     def _wait_results(self):
         """

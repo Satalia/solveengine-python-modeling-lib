@@ -7,7 +7,6 @@ models via the Solve-Engine.
 """
 
 import itertools
-from numpy import ndarray
 from functools import reduce
 from os.path import isfile
 
@@ -80,6 +79,17 @@ class SATModel(BaseModel):
         self.__lst_variables = list()
         self.__constraints = list()
 
+    def reinit(self):
+        """
+        Reinitialise the model characteristics that are not init parameters
+        :return: Nothing
+        """
+        self.__variables = dict()
+        self.__variables_name = dict()
+        self.__lst_variables = list()
+        self.__constraints = list()
+        super(SATModel, self).reinit()
+
     def _process_solution(self, result_obj):
         """
         process the results of the solver
@@ -88,14 +98,15 @@ class SATModel(BaseModel):
             from Solveengine after solving the problem
         :return: s_status: the status of the job of solving
         """
-        s_status = result_obj.status
+        s_status = str(result_obj.status)
         if s_status not in SolverStatusCode.get_values():
             raise ValueError("solver status unknown:", self.solver_status)
         
         for var in result_obj.variables:
             var_id = int(var.name)
             if var_id in self.__variables.keys():
-                self.__variables[int(var.name)].set_value(True if var.value == 1 else False)
+                self.__variables[var_id].set_value(True if int(var.value) == 1 else False)
+
         return s_status
 
     def add_variable(self, name, id_=0):
@@ -196,10 +207,7 @@ class SATModel(BaseModel):
         if not isfile(file_path):
             raise ValueError("\n".join(["Could not build_from_file, file does not exist.",
                                        "".join(["Here is the path given : ", file_path])]))
-        self.__variables = dict()
-        self.__variables_name = dict()
-        self.__lst_variables = list()
-        self.__constraints = []
+        self.reinit()
 
         with open(file_path, 'r') as f:
             pb_txt = f.read()

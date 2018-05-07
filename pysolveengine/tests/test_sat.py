@@ -6,7 +6,7 @@ Module for testing the Solver-Engine interface
 # pylint: disable=R0201, C0103, W0612, C0111, protected-access
 
 import pytest
-from solveengine.satmodel import SATModel, Var, AND, OR, XOR, IMP, EQ, NE, NEG
+from pysolveengine.satmodel import SATModel, Var, AND, OR, XOR, IMP, EQ, NE, NEG
 
 
 def do_test_expr(expr, cls, result_str):

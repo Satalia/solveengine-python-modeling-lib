@@ -185,6 +185,9 @@ model.print_constraints()
 # You can remove constraint knowing its index
 model.remove_constraint_with_index(index=-1)
 
+# At all time you can reinitialise the model's status/cosntraints/variables
+#
+model.reinit()
 
 # solving the model
 #
@@ -218,7 +221,7 @@ if model.se_status == SEStatusCode.COMPLETED:
         print("z3=", z3.value)
         
         #or
-        for key, value in model.variables:
+        for key, value in model.var_results:
             print(key, "=", value)
             
         #print summary
@@ -232,7 +235,7 @@ if model.se_status == SEStatusCode.COMPLETED:
 # status codes for an unsuccessful run
 if model.se_status in [SEStatusCode.FAILED,
                        SEStatusCode.STOPPED,
-                       SolverStatusCode.INTERRUPTED]:
+                       SEStatusCode.INTERRUPTED]:
     print("something went wrong")
 if model.se_status in [SEStatusCode.TIMEOUT]:
     print("time limit has been reached")

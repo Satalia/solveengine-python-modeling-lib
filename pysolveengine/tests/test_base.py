@@ -8,7 +8,7 @@
 import json
 import pytest
 import httpretty
-from solveengine.basemodel import SEStatusCode, BaseModel, SolverStatusCode
+from pysolveengine.basemodel import SEStatusCode, BaseModel, SolverStatusCode
 
 
 class TestBaseModel:

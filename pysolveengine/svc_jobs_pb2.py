@@ -13,10 +13,10 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-import solveengine.annotations_pb2 as google_dot_api_dot_annotations__pb2
+import google.api.annotations_pb2 as google_dot_api_dot_annotations__pb2
 from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
-import solveengine.converter_pb2 as converter__pb2
+import pysolveengine.converter_pb2 as converter__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
