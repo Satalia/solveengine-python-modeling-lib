@@ -6,7 +6,7 @@ Module for testing the Solver-Engine interface
 # pylint: disable=R0201, C0103, W0612, C0111, protected-access
 
 import pytest
-from solveengine.mipmodel import MIPModel, Expr, Operator, Var, Constraint, VarType, INF
+from pysolveengine.mipmodel import MIPModel, Expr, Operator, Var, Constraint, VarType, INF
 
 
 def var(name="x", lb=0, ub=1, vartype=VarType.CONTINIOUS):
@@ -29,8 +29,8 @@ class TestMIPModel:
         assert v.name == "v"
         assert v.vartype == VarType.CONTINIOUS
 
-    def test_add_continious_var(self):
-        v = MIPModel(token="a").add_continious_var("v", lb=12, ub=34)
+    def test_add_continuous_var(self):
+        v = MIPModel(token="a").add_continuous_var("v", lb=12, ub=34)
         assert v.lb == 12
         assert v.ub == 34
         assert v.name == "v"
@@ -38,7 +38,7 @@ class TestMIPModel:
 
     def test_unique_var_names(self):
         m = MIPModel("a")
-        v1 = m.add_continious_var("v")
+        v1 = m.add_continuous_var("v")
         with pytest.raises(ValueError):
             v2 = m.add_var("v")
 
